@@ -14,7 +14,217 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      agrochemicals_used: {
+        Row: {
+          application_order: number
+          created_at: string
+          dose: number
+          id: string
+          job_id: string
+          notes: string | null
+          product_name: string
+          unit: string
+        }
+        Insert: {
+          application_order?: number
+          created_at?: string
+          dose: number
+          id?: string
+          job_id: string
+          notes?: string | null
+          product_name: string
+          unit: string
+        }
+        Update: {
+          application_order?: number
+          created_at?: string
+          dose?: number
+          id?: string
+          job_id?: string
+          notes?: string | null
+          product_name?: string
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agrochemicals_used_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clients: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      farms: {
+        Row: {
+          area_hectares: number | null
+          client_id: string
+          created_at: string
+          id: string
+          location: string | null
+          name: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          area_hectares?: number | null
+          client_id: string
+          created_at?: string
+          id?: string
+          location?: string | null
+          name: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          area_hectares?: number | null
+          client_id?: string
+          created_at?: string
+          id?: string
+          location?: string | null
+          name?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farms_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jobs: {
+        Row: {
+          application_dose: string | null
+          client_id: string
+          created_at: string
+          description: string | null
+          due_date: string | null
+          farm_id: string
+          id: string
+          notes: string | null
+          start_date: string | null
+          status: Database["public"]["Enums"]["job_status"]
+          task: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          application_dose?: string | null
+          client_id: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          farm_id: string
+          id?: string
+          notes?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+          task?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          application_dose?: string | null
+          client_id?: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          farm_id?: string
+          id?: string
+          notes?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+          task?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          company: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +233,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      job_status: "pending" | "in_progress" | "done"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +360,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      job_status: ["pending", "in_progress", "done"],
+    },
   },
 } as const
