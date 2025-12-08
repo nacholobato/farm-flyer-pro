@@ -58,34 +58,58 @@ export type Database = {
       clients: {
         Row: {
           address: string | null
+          contacto_principal: string | null
           created_at: string
+          cuit: string | null
           email: string | null
           id: string
           name: string
           notes: string | null
+          otro_contacto_1: string | null
+          otro_contacto_2: string | null
           phone: string | null
+          puesto: string | null
+          razon_social: string | null
+          telefono_1: string | null
+          telefono_2: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           address?: string | null
+          contacto_principal?: string | null
           created_at?: string
+          cuit?: string | null
           email?: string | null
           id?: string
           name: string
           notes?: string | null
+          otro_contacto_1?: string | null
+          otro_contacto_2?: string | null
           phone?: string | null
+          puesto?: string | null
+          razon_social?: string | null
+          telefono_1?: string | null
+          telefono_2?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           address?: string | null
+          contacto_principal?: string | null
           created_at?: string
+          cuit?: string | null
           email?: string | null
           id?: string
           name?: string
           notes?: string | null
+          otro_contacto_1?: string | null
+          otro_contacto_2?: string | null
           phone?: string | null
+          puesto?: string | null
+          razon_social?: string | null
+          telefono_1?: string | null
+          telefono_2?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -96,7 +120,9 @@ export type Database = {
           area_hectares: number | null
           client_id: string
           created_at: string
+          cultivo: string | null
           id: string
+          localidad: string | null
           location: string | null
           name: string
           notes: string | null
@@ -106,7 +132,9 @@ export type Database = {
           area_hectares?: number | null
           client_id: string
           created_at?: string
+          cultivo?: string | null
           id?: string
+          localidad?: string | null
           location?: string | null
           name: string
           notes?: string | null
@@ -116,7 +144,9 @@ export type Database = {
           area_hectares?: number | null
           client_id?: string
           created_at?: string
+          cultivo?: string | null
           id?: string
+          localidad?: string | null
           location?: string | null
           name?: string
           notes?: string | null
@@ -137,6 +167,8 @@ export type Database = {
           application_dose: string | null
           client_id: string
           created_at: string
+          cuadro: string | null
+          cultivo: string | null
           description: string | null
           due_date: string | null
           farm_id: string
@@ -144,6 +176,8 @@ export type Database = {
           notes: string | null
           start_date: string | null
           status: Database["public"]["Enums"]["job_status"]
+          superficie_aplicada_has: number | null
+          superficie_teorica_has: number | null
           task: string | null
           title: string
           updated_at: string
@@ -153,6 +187,8 @@ export type Database = {
           application_dose?: string | null
           client_id: string
           created_at?: string
+          cuadro?: string | null
+          cultivo?: string | null
           description?: string | null
           due_date?: string | null
           farm_id: string
@@ -160,6 +196,8 @@ export type Database = {
           notes?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["job_status"]
+          superficie_aplicada_has?: number | null
+          superficie_teorica_has?: number | null
           task?: string | null
           title: string
           updated_at?: string
@@ -169,6 +207,8 @@ export type Database = {
           application_dose?: string | null
           client_id?: string
           created_at?: string
+          cuadro?: string | null
+          cultivo?: string | null
           description?: string | null
           due_date?: string | null
           farm_id?: string
@@ -176,6 +216,8 @@ export type Database = {
           notes?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["job_status"]
+          superficie_aplicada_has?: number | null
+          superficie_teorica_has?: number | null
           task?: string | null
           title?: string
           updated_at?: string

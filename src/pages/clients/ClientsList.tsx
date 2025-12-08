@@ -41,8 +41,16 @@ export default function ClientsList() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
+    razon_social: '',
+    cuit: '',
+    contacto_principal: '',
+    puesto: '',
     email: '',
     phone: '',
+    otro_contacto_1: '',
+    telefono_1: '',
+    otro_contacto_2: '',
+    telefono_2: '',
     address: '',
     notes: '',
   });
@@ -54,9 +62,27 @@ export default function ClientsList() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await createClient.mutateAsync(formData);
+    await createClient.mutateAsync({
+      ...formData,
+      razon_social: formData.razon_social || null,
+      cuit: formData.cuit || null,
+      contacto_principal: formData.contacto_principal || null,
+      puesto: formData.puesto || null,
+      email: formData.email || null,
+      phone: formData.phone || null,
+      otro_contacto_1: formData.otro_contacto_1 || null,
+      telefono_1: formData.telefono_1 || null,
+      otro_contacto_2: formData.otro_contacto_2 || null,
+      telefono_2: formData.telefono_2 || null,
+      address: formData.address || null,
+      notes: formData.notes || null,
+    });
     setDialogOpen(false);
-    setFormData({ name: '', email: '', phone: '', address: '', notes: '' });
+    setFormData({ 
+      name: '', razon_social: '', cuit: '', contacto_principal: '', puesto: '',
+      email: '', phone: '', otro_contacto_1: '', telefono_1: '', otro_contacto_2: '', 
+      telefono_2: '', address: '', notes: '' 
+    });
   };
 
   const handleDelete = async () => {
@@ -89,18 +115,38 @@ export default function ClientsList() {
                     Agrega un nuevo cliente a tu cartera
                   </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Nombre *</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="Nombre del cliente"
-                      required
-                    />
+                <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Cliente *</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="Nombre del cliente"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="razon_social">Razón Social</Label>
+                      <Input
+                        id="razon_social"
+                        value={formData.razon_social}
+                        onChange={(e) => setFormData({ ...formData, razon_social: e.target.value })}
+                        placeholder="Razón social"
+                      />
+                    </div>
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="cuit">CUIT</Label>
+                      <Input
+                        id="cuit"
+                        value={formData.cuit}
+                        onChange={(e) => setFormData({ ...formData, cuit: e.target.value })}
+                        placeholder="XX-XXXXXXXX-X"
+                      />
+                    </div>
                     <div className="space-y-2">
                       <Label htmlFor="email">Email</Label>
                       <Input
@@ -111,13 +157,73 @@ export default function ClientsList() {
                         placeholder="email@ejemplo.com"
                       />
                     </div>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="phone">Teléfono</Label>
+                      <Label htmlFor="contacto_principal">Contacto Principal</Label>
                       <Input
-                        id="phone"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        placeholder="+54 9 11 1234-5678"
+                        id="contacto_principal"
+                        value={formData.contacto_principal}
+                        onChange={(e) => setFormData({ ...formData, contacto_principal: e.target.value })}
+                        placeholder="Nombre del contacto"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="puesto">Puesto</Label>
+                      <Input
+                        id="puesto"
+                        value={formData.puesto}
+                        onChange={(e) => setFormData({ ...formData, puesto: e.target.value })}
+                        placeholder="Cargo o puesto"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Teléfono</Label>
+                    <Input
+                      id="phone"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      placeholder="+54 9 11 1234-5678"
+                    />
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="otro_contacto_1">Otro Contacto 1</Label>
+                      <Input
+                        id="otro_contacto_1"
+                        value={formData.otro_contacto_1}
+                        onChange={(e) => setFormData({ ...formData, otro_contacto_1: e.target.value })}
+                        placeholder="Nombre"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="telefono_1">Teléfono 1</Label>
+                      <Input
+                        id="telefono_1"
+                        value={formData.telefono_1}
+                        onChange={(e) => setFormData({ ...formData, telefono_1: e.target.value })}
+                        placeholder="Teléfono"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="otro_contacto_2">Otro Contacto 2</Label>
+                      <Input
+                        id="otro_contacto_2"
+                        value={formData.otro_contacto_2}
+                        onChange={(e) => setFormData({ ...formData, otro_contacto_2: e.target.value })}
+                        placeholder="Nombre"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="telefono_2">Teléfono 2</Label>
+                      <Input
+                        id="telefono_2"
+                        value={formData.telefono_2}
+                        onChange={(e) => setFormData({ ...formData, telefono_2: e.target.value })}
+                        placeholder="Teléfono"
                       />
                     </div>
                   </div>
@@ -137,7 +243,7 @@ export default function ClientsList() {
                       value={formData.notes}
                       onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                       placeholder="Notas adicionales..."
-                      rows={3}
+                      rows={2}
                     />
                   </div>
                 </div>
