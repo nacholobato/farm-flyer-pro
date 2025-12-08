@@ -61,8 +61,8 @@ export default function FarmsList() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Campos"
-        description="Todos los campos de tus clientes"
+        title="Fincas"
+        description="Todas las fincas de tus clientes"
       />
 
       {/* Filters */}
@@ -70,7 +70,7 @@ export default function FarmsList() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Buscar campos..."
+            placeholder="Buscar fincas..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10"
@@ -95,10 +95,10 @@ export default function FarmsList() {
       {filteredFarms?.length === 0 ? (
         <EmptyState
           icon={<MapPin className="h-12 w-12" />}
-          title="No hay campos"
+          title="No hay fincas"
           description={search || clientFilter !== 'all' 
-            ? 'No se encontraron campos con esos filtros' 
-            : 'Los campos se crean desde la ficha de cada cliente'}
+            ? 'No se encontraron fincas con esos filtros' 
+            : 'Las fincas se crean desde la ficha de cada cliente'}
           action={{ label: 'Ir a Clientes', onClick: () => navigate('/clients') }}
         />
       ) : (
@@ -113,8 +113,8 @@ export default function FarmsList() {
                     </div>
                     <div>
                       <CardTitle className="text-lg">{farm.name}</CardTitle>
-                      {farm.location && (
-                        <CardDescription>{farm.location}</CardDescription>
+                      {farm.localidad && (
+                        <CardDescription>{farm.localidad}</CardDescription>
                       )}
                     </div>
                   </div>
@@ -137,10 +137,22 @@ export default function FarmsList() {
                     <Users className="h-4 w-4" />
                     {getClientName(farm.client_id)}
                   </Link>
+                  {farm.cultivo && (
+                    <p>
+                      <span className="text-muted-foreground">Cultivo:</span>{' '}
+                      <span className="font-medium">{farm.cultivo}</span>
+                    </p>
+                  )}
                   {farm.area_hectares && (
                     <p>
-                      <span className="text-muted-foreground">Área:</span>{' '}
+                      <span className="text-muted-foreground">Superficie:</span>{' '}
                       <span className="font-medium">{farm.area_hectares} ha</span>
+                    </p>
+                  )}
+                  {farm.location && (
+                    <p>
+                      <span className="text-muted-foreground">Ubicación:</span>{' '}
+                      <span className="font-medium">{farm.location}</span>
                     </p>
                   )}
                 </div>
@@ -154,9 +166,9 @@ export default function FarmsList() {
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar campo?</AlertDialogTitle>
+            <AlertDialogTitle>¿Eliminar finca?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción eliminará el campo y todos los trabajos asociados. No se puede deshacer.
+              Esta acción eliminará la finca y todos los trabajos asociados. No se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

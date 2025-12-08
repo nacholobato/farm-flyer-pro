@@ -13,8 +13,16 @@ export interface Client {
   id: string;
   user_id: string;
   name: string;
+  razon_social: string | null;
+  cuit: string | null;
+  contacto_principal: string | null;
+  puesto: string | null;
   email: string | null;
   phone: string | null;
+  otro_contacto_1: string | null;
+  telefono_1: string | null;
+  otro_contacto_2: string | null;
+  telefono_2: string | null;
   address: string | null;
   notes: string | null;
   created_at: string;
@@ -25,9 +33,10 @@ export interface Farm {
   id: string;
   client_id: string;
   name: string;
-  location: string | null;
+  cultivo: string | null;
   area_hectares: number | null;
-  notes: string | null;
+  localidad: string | null;
+  location: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -41,6 +50,10 @@ export interface Job {
   description: string | null;
   task: string | null;
   application_dose: string | null;
+  cuadro: string | null;
+  cultivo: string | null;
+  superficie_teorica_has: number | null;
+  superficie_aplicada_has: number | null;
   start_date: string | null;
   due_date: string | null;
   status: JobStatus;

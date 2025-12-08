@@ -43,6 +43,10 @@ export default function JobCreate() {
     description: '',
     task: '',
     application_dose: '',
+    cuadro: '',
+    cultivo: '',
+    superficie_teorica_has: '',
+    superficie_aplicada_has: '',
     start_date: '',
     due_date: '',
     status: 'pending' as JobStatus,
@@ -89,6 +93,10 @@ export default function JobCreate() {
         description: formData.description || null,
         task: formData.task || null,
         application_dose: formData.application_dose || null,
+        cuadro: formData.cuadro || null,
+        cultivo: formData.cultivo || null,
+        superficie_teorica_has: formData.superficie_teorica_has ? parseFloat(formData.superficie_teorica_has) : null,
+        superficie_aplicada_has: formData.superficie_aplicada_has ? parseFloat(formData.superficie_aplicada_has) : null,
         notes: formData.notes || null,
       });
 
@@ -203,12 +211,58 @@ export default function JobCreate() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="application_dose">Dosis de aplicación</Label>
+                <Label htmlFor="application_dose">Dosis de Caldo</Label>
                 <Input
                   id="application_dose"
                   value={formData.application_dose}
                   onChange={(e) => setFormData({ ...formData, application_dose: e.target.value })}
-                  placeholder="Ej: 2 L/ha"
+                  placeholder="Ej: 80 L/ha"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="cuadro">Cuadro</Label>
+                <Input
+                  id="cuadro"
+                  value={formData.cuadro}
+                  onChange={(e) => setFormData({ ...formData, cuadro: e.target.value })}
+                  placeholder="Identificación del cuadro"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cultivo">Cultivo</Label>
+                <Input
+                  id="cultivo"
+                  value={formData.cultivo}
+                  onChange={(e) => setFormData({ ...formData, cultivo: e.target.value })}
+                  placeholder="Tipo de cultivo"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="superficie_teorica">Superficie Teórica (has)</Label>
+                <Input
+                  id="superficie_teorica"
+                  type="number"
+                  step="0.01"
+                  value={formData.superficie_teorica_has}
+                  onChange={(e) => setFormData({ ...formData, superficie_teorica_has: e.target.value })}
+                  placeholder="100.5"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="superficie_aplicada">Superficie Aplicada (has)</Label>
+                <Input
+                  id="superficie_aplicada"
+                  type="number"
+                  step="0.01"
+                  value={formData.superficie_aplicada_has}
+                  onChange={(e) => setFormData({ ...formData, superficie_aplicada_has: e.target.value })}
+                  placeholder="98.2"
                 />
               </div>
             </div>
