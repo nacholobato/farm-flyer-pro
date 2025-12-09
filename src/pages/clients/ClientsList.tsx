@@ -45,19 +45,17 @@ export default function ClientsList() {
     cuit: '',
     contacto_principal: '',
     puesto: '',
-    email: '',
     phone: '',
     otro_contacto_1: '',
     telefono_1: '',
     otro_contacto_2: '',
     telefono_2: '',
-    address: '',
     notes: '',
   });
 
   const filteredClients = clients?.filter(client =>
     client.name.toLowerCase().includes(search.toLowerCase()) ||
-    client.email?.toLowerCase().includes(search.toLowerCase())
+    client.phone?.toLowerCase().includes(search.toLowerCase())
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -68,20 +66,18 @@ export default function ClientsList() {
       cuit: formData.cuit || null,
       contacto_principal: formData.contacto_principal || null,
       puesto: formData.puesto || null,
-      email: formData.email || null,
       phone: formData.phone || null,
       otro_contacto_1: formData.otro_contacto_1 || null,
       telefono_1: formData.telefono_1 || null,
       otro_contacto_2: formData.otro_contacto_2 || null,
       telefono_2: formData.telefono_2 || null,
-      address: formData.address || null,
       notes: formData.notes || null,
     });
     setDialogOpen(false);
     setFormData({ 
       name: '', razon_social: '', cuit: '', contacto_principal: '', puesto: '',
-      email: '', phone: '', otro_contacto_1: '', telefono_1: '', otro_contacto_2: '', 
-      telefono_2: '', address: '', notes: '' 
+      phone: '', otro_contacto_1: '', telefono_1: '', otro_contacto_2: '', 
+      telefono_2: '', notes: '' 
     });
   };
 
@@ -145,16 +141,6 @@ export default function ClientsList() {
                         value={formData.cuit}
                         onChange={(e) => setFormData({ ...formData, cuit: e.target.value })}
                         placeholder="XX-XXXXXXXX-X"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        placeholder="email@ejemplo.com"
                       />
                     </div>
                   </div>
@@ -226,15 +212,6 @@ export default function ClientsList() {
                         placeholder="Teléfono"
                       />
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="address">Dirección</Label>
-                    <Input
-                      id="address"
-                      value={formData.address}
-                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      placeholder="Dirección del cliente"
-                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="notes">Notas</Label>
@@ -309,22 +286,16 @@ export default function ClientsList() {
                 </div>
                 
                 <div className="mt-4 space-y-2 text-sm text-muted-foreground">
-                  {client.email && (
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4" />
-                      <span className="truncate">{client.email}</span>
-                    </div>
-                  )}
                   {client.phone && (
                     <div className="flex items-center gap-2">
                       <Phone className="h-4 w-4" />
                       <span>{client.phone}</span>
                     </div>
                   )}
-                  {client.address && (
+                  {client.contacto_principal && (
                     <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4" />
-                      <span className="truncate">{client.address}</span>
+                      <Users className="h-4 w-4" />
+                      <span className="truncate">{client.contacto_principal}</span>
                     </div>
                   )}
                 </div>

@@ -57,11 +57,9 @@ export type Database = {
       }
       clients: {
         Row: {
-          address: string | null
           contacto_principal: string | null
           created_at: string
           cuit: string | null
-          email: string | null
           id: string
           name: string
           notes: string | null
@@ -76,11 +74,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          address?: string | null
           contacto_principal?: string | null
           created_at?: string
           cuit?: string | null
-          email?: string | null
           id?: string
           name: string
           notes?: string | null
@@ -95,11 +91,9 @@ export type Database = {
           user_id: string
         }
         Update: {
-          address?: string | null
           contacto_principal?: string | null
           created_at?: string
           cuit?: string | null
-          email?: string | null
           id?: string
           name?: string
           notes?: string | null

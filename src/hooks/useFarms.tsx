@@ -55,10 +55,10 @@ export function useCreateFarm() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['farms'] });
       queryClient.invalidateQueries({ queryKey: ['farms', variables.client_id] });
-      toast.success('Campo creado exitosamente');
+      toast.success('Finca creada exitosamente');
     },
     onError: (error) => {
-      toast.error('Error al crear campo: ' + error.message);
+      toast.error('Error al crear finca: ' + error.message);
     },
   });
 }
@@ -80,10 +80,10 @@ export function useUpdateFarm() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['farms'] });
-      toast.success('Campo actualizado exitosamente');
+      toast.success('Finca actualizada exitosamente');
     },
     onError: (error) => {
-      toast.error('Error al actualizar campo: ' + error.message);
+      toast.error('Error al actualizar finca: ' + error.message);
     },
   });
 }
@@ -102,10 +102,10 @@ export function useDeleteFarm() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['farms'] });
-      toast.success('Campo eliminado exitosamente');
+      toast.success('Finca eliminada exitosamente');
     },
     onError: (error) => {
-      toast.error('Error al eliminar campo: ' + error.message);
+      toast.error('Error al eliminar finca: ' + error.message);
     },
   });
 }

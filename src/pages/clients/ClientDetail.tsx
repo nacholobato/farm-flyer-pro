@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useClient, useUpdateClient, useDeleteClient } from '@/hooks/useClients';
-import { useFarms, useCreateFarm, useDeleteFarm } from '@/hooks/useFarms';
+import { useFarms, useCreateFarm, useUpdateFarm, useDeleteFarm } from '@/hooks/useFarms';
 import { useJobs } from '@/hooks/useJobs';
 import { PageHeader } from '@/components/ui/page-header';
 import { LoadingPage } from '@/components/ui/loading-spinner';
@@ -34,6 +34,7 @@ import {
 import { Mail, Phone, MapPin, Edit, Trash2, Plus, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { LocationPicker } from '@/components/LocationPicker';
+import { Farm } from '@/types/database';
 
 export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
@@ -46,12 +47,15 @@ export default function ClientDetail() {
   const updateClient = useUpdateClient();
   const deleteClient = useDeleteClient();
   const createFarm = useCreateFarm();
+  const updateFarm = useUpdateFarm();
   const deleteFarm = useDeleteFarm();
   
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [farmDialogOpen, setFarmDialogOpen] = useState(false);
+  const [editFarmDialogOpen, setEditFarmDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteFarmId, setDeleteFarmId] = useState<string | null>(null);
+  const [editingFarm, setEditingFarm] = useState<Farm | null>(null);
   
   const [editData, setEditData] = useState({
     name: '',
@@ -59,17 +63,23 @@ export default function ClientDetail() {
     cuit: '',
     contacto_principal: '',
     puesto: '',
-    email: '',
     phone: '',
     otro_contacto_1: '',
     telefono_1: '',
     otro_contacto_2: '',
     telefono_2: '',
-    address: '',
     notes: '',
   });
   
   const [farmData, setFarmData] = useState({
+    name: '',
+    cultivo: '',
+    area_hectares: '',
+    localidad: '',
+    location: '',
+  });
+
+  const [editFarmData, setEditFarmData] = useState({
     name: '',
     cultivo: '',
     area_hectares: '',
@@ -97,16 +107,26 @@ export default function ClientDetail() {
       cuit: client.cuit || '',
       contacto_principal: client.contacto_principal || '',
       puesto: client.puesto || '',
-      email: client.email || '',
       phone: client.phone || '',
       otro_contacto_1: client.otro_contacto_1 || '',
       telefono_1: client.telefono_1 || '',
       otro_contacto_2: client.otro_contacto_2 || '',
       telefono_2: client.telefono_2 || '',
-      address: client.address || '',
       notes: client.notes || '',
     });
     setEditDialogOpen(true);
+  };
+
+  const openEditFarmDialog = (farm: Farm) => {
+    setEditingFarm(farm);
+    setEditFarmData({
+      name: farm.name,
+      cultivo: farm.cultivo || '',
+      area_hectares: farm.area_hectares?.toString() || '',
+      localidad: farm.localidad || '',
+      location: farm.location || '',
+    });
+    setEditFarmDialogOpen(true);
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -118,16 +138,29 @@ export default function ClientDetail() {
       cuit: editData.cuit || null,
       contacto_principal: editData.contacto_principal || null,
       puesto: editData.puesto || null,
-      email: editData.email || null,
       phone: editData.phone || null,
       otro_contacto_1: editData.otro_contacto_1 || null,
       telefono_1: editData.telefono_1 || null,
       otro_contacto_2: editData.otro_contacto_2 || null,
       telefono_2: editData.telefono_2 || null,
-      address: editData.address || null,
       notes: editData.notes || null,
     });
     setEditDialogOpen(false);
+  };
+
+  const handleUpdateFarm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingFarm) return;
+    await updateFarm.mutateAsync({
+      id: editingFarm.id,
+      name: editFarmData.name,
+      cultivo: editFarmData.cultivo || null,
+      area_hectares: editFarmData.area_hectares ? parseFloat(editFarmData.area_hectares) : null,
+      localidad: editFarmData.localidad || null,
+      location: editFarmData.location || null,
+    });
+    setEditFarmDialogOpen(false);
+    setEditingFarm(null);
   };
 
   const handleDelete = async () => {
@@ -192,17 +225,6 @@ export default function ClientDetail() {
                 <p className="font-medium">{client.cuit}</p>
               </div>
             )}
-            {client.email && (
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                  <Mail className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Email</p>
-                  <p className="font-medium">{client.email}</p>
-                </div>
-              </div>
-            )}
           </div>
           
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -221,17 +243,6 @@ export default function ClientDetail() {
                 <div>
                   <p className="text-sm text-muted-foreground">Teléfono</p>
                   <p className="font-medium">{client.phone}</p>
-                </div>
-              </div>
-            )}
-            {client.address && (
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                  <MapPin className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Dirección</p>
-                  <p className="font-medium">{client.address}</p>
                 </div>
               </div>
             )}
@@ -367,14 +378,24 @@ export default function ClientDetail() {
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between">
                       <CardTitle className="text-lg">{farm.name}</CardTitle>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        onClick={() => setDeleteFarmId(farm.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                          onClick={() => openEditFarmDialog(farm)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          onClick={() => setDeleteFarmId(farm.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                     {farm.localidad && (
                       <CardDescription>{farm.localidad}</CardDescription>
@@ -472,15 +493,6 @@ export default function ClientDetail() {
                     onChange={(e) => setEditData({ ...editData, cuit: e.target.value })}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="editEmail">Email</Label>
-                  <Input
-                    id="editEmail"
-                    type="email"
-                    value={editData.email}
-                    onChange={(e) => setEditData({ ...editData, email: e.target.value })}
-                  />
-                </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
@@ -545,14 +557,6 @@ export default function ClientDetail() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="editAddress">Dirección</Label>
-                <Input
-                  id="editAddress"
-                  value={editData.address}
-                  onChange={(e) => setEditData({ ...editData, address: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="editNotes">Notas</Label>
                 <Textarea
                   id="editNotes"
@@ -597,9 +601,9 @@ export default function ClientDetail() {
       <AlertDialog open={!!deleteFarmId} onOpenChange={() => setDeleteFarmId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar campo?</AlertDialogTitle>
+            <AlertDialogTitle>¿Eliminar finca?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción eliminará el campo y todos los trabajos asociados. No se puede deshacer.
+              Esta acción eliminará la finca y todos los trabajos asociados. No se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -610,6 +614,82 @@ export default function ClientDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Farm Dialog */}
+      <Dialog open={editFarmDialogOpen} onOpenChange={setEditFarmDialogOpen}>
+        <DialogContent>
+          <form onSubmit={handleUpdateFarm}>
+            <DialogHeader>
+              <DialogTitle>Editar Finca</DialogTitle>
+              <DialogDescription>
+                Modifica los datos de la finca
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="editFarmName">Finca *</Label>
+                  <Input
+                    id="editFarmName"
+                    value={editFarmData.name}
+                    onChange={(e) => setEditFarmData({ ...editFarmData, name: e.target.value })}
+                    placeholder="Nombre de la finca"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editFarmCultivo">Cultivo</Label>
+                  <Input
+                    id="editFarmCultivo"
+                    value={editFarmData.cultivo}
+                    onChange={(e) => setEditFarmData({ ...editFarmData, cultivo: e.target.value })}
+                    placeholder="Tipo de cultivo"
+                  />
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="editFarmArea">Superficie (has)</Label>
+                  <Input
+                    id="editFarmArea"
+                    type="number"
+                    step="0.01"
+                    value={editFarmData.area_hectares}
+                    onChange={(e) => setEditFarmData({ ...editFarmData, area_hectares: e.target.value })}
+                    placeholder="100.5"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editFarmLocalidad">Localidad</Label>
+                  <Input
+                    id="editFarmLocalidad"
+                    value={editFarmData.localidad}
+                    onChange={(e) => setEditFarmData({ ...editFarmData, localidad: e.target.value })}
+                    placeholder="Localidad"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editFarmLocation">Ubicación GPS</Label>
+                <LocationPicker
+                  value={editFarmData.location}
+                  onChange={(value) => setEditFarmData({ ...editFarmData, location: value })}
+                  placeholder="Coordenadas GPS"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditFarmDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={updateFarm.isPending}>
+                {updateFarm.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Guardar
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
