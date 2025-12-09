@@ -17,13 +17,11 @@ export interface Client {
   cuit: string | null;
   contacto_principal: string | null;
   puesto: string | null;
-  email: string | null;
   phone: string | null;
   otro_contacto_1: string | null;
   telefono_1: string | null;
   otro_contacto_2: string | null;
   telefono_2: string | null;
-  address: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
