@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Mail, Phone, MapPin, Edit, Trash2, Plus, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { LocationPicker } from '@/components/LocationPicker';
 
 export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
@@ -266,7 +267,7 @@ export default function ClientDetail() {
       {/* Tabs for Farms and Jobs */}
       <Tabs defaultValue="farms">
         <TabsList>
-          <TabsTrigger value="farms">Campos ({farms?.length || 0})</TabsTrigger>
+          <TabsTrigger value="farms">Fincas ({farms?.length || 0})</TabsTrigger>
           <TabsTrigger value="jobs">Trabajos ({jobs?.length || 0})</TabsTrigger>
         </TabsList>
 
@@ -276,15 +277,15 @@ export default function ClientDetail() {
               <DialogTrigger asChild>
                 <Button>
                   <Plus className="mr-2 h-4 w-4" />
-                  Nuevo Campo
+                  Nueva Finca
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <form onSubmit={handleCreateFarm}>
                   <DialogHeader>
-                    <DialogTitle>Nuevo Campo</DialogTitle>
+                    <DialogTitle>Nueva Finca</DialogTitle>
                     <DialogDescription>
-                      Agrega un campo para este cliente
+                      Agrega una finca para este cliente
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
@@ -332,12 +333,11 @@ export default function ClientDetail() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="location">Ubicación (GPS/Coordenadas)</Label>
-                      <Input
-                        id="location"
+                      <Label htmlFor="location">Ubicación GPS</Label>
+                      <LocationPicker
                         value={farmData.location}
-                        onChange={(e) => setFarmData({ ...farmData, location: e.target.value })}
-                        placeholder="Coordenadas o referencia"
+                        onChange={(value) => setFarmData({ ...farmData, location: value })}
+                        placeholder="Coordenadas GPS"
                       />
                     </div>
                   </div>
@@ -346,7 +346,7 @@ export default function ClientDetail() {
                       Cancelar
                     </Button>
                     <Button type="submit" disabled={createFarm.isPending}>
-                      Crear Campo
+                      Crear Finca
                     </Button>
                   </DialogFooter>
                 </form>
