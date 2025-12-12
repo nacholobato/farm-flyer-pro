@@ -4,11 +4,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { useUserOrganizationId } from "@/hooks/useOrganization";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { LoadingPage } from "@/components/ui/loading-spinner";
 
 // Pages
 import AuthPage from "@/pages/Auth";
+import OrganizationSetup from "@/pages/OrganizationSetup";
 import Dashboard from "@/pages/Dashboard";
 import ClientsList from "@/pages/clients/ClientsList";
 import ClientDetail from "@/pages/clients/ClientDetail";
@@ -23,8 +25,9 @@ const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const { data: organizationId, isLoading: orgLoading } = useUserOrganizationId();
 
-  if (loading) {
+  if (loading || orgLoading) {
     return <LoadingPage />;
   }
 
@@ -32,7 +35,32 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/auth" replace />;
   }
 
+  // User is logged in but has no organization - redirect to setup
+  if (!organizationId) {
+    return <Navigate to="/organization-setup" replace />;
+  }
+
   return <AppLayout>{children}</AppLayout>;
+}
+
+function OrganizationSetupRoute() {
+  const { user, loading } = useAuth();
+  const { data: organizationId, isLoading: orgLoading } = useUserOrganizationId();
+
+  if (loading || orgLoading) {
+    return <LoadingPage />;
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Already has organization, go to dashboard
+  if (organizationId) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <OrganizationSetup />;
 }
 
 function AppRoutes() {
@@ -45,6 +73,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
+      <Route path="/organization-setup" element={<OrganizationSetupRoute />} />
       
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       

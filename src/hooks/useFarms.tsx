@@ -2,10 +2,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Farm } from '@/types/database';
 import { toast } from 'sonner';
+import { useUserOrganizationId } from './useOrganization';
 
 export function useFarms(clientId?: string) {
+  const { data: organizationId } = useUserOrganizationId();
+
   return useQuery({
-    queryKey: ['farms', clientId],
+    queryKey: ['farms', clientId, organizationId],
     queryFn: async () => {
       let query = supabase.from('farms').select('*').order('name');
       
@@ -17,6 +20,7 @@ export function useFarms(clientId?: string) {
       if (error) throw error;
       return data as Farm[];
     },
+    enabled: !!organizationId,
   });
 }
 
@@ -40,12 +44,18 @@ export function useFarm(id: string | undefined) {
 
 export function useCreateFarm() {
   const queryClient = useQueryClient();
+  const { data: organizationId } = useUserOrganizationId();
 
   return useMutation({
-    mutationFn: async (farm: Omit<Farm, 'id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (farm: Omit<Farm, 'id' | 'organization_id' | 'created_at' | 'updated_at'>) => {
+      if (!organizationId) throw new Error('No organization found');
+
       const { data, error } = await supabase
         .from('farms')
-        .insert(farm)
+        .insert({
+          ...farm,
+          organization_id: organizationId,
+        })
         .select()
         .single();
       

@@ -2,10 +2,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Client } from '@/types/database';
 import { toast } from 'sonner';
+import { useUserOrganizationId } from './useOrganization';
 
 export function useClients() {
+  const { data: organizationId } = useUserOrganizationId();
+
   return useQuery({
-    queryKey: ['clients'],
+    queryKey: ['clients', organizationId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('clients')
@@ -15,6 +18,7 @@ export function useClients() {
       if (error) throw error;
       return data as Client[];
     },
+    enabled: !!organizationId,
   });
 }
 
@@ -38,15 +42,21 @@ export function useClient(id: string | undefined) {
 
 export function useCreateClient() {
   const queryClient = useQueryClient();
+  const { data: organizationId } = useUserOrganizationId();
 
   return useMutation({
-    mutationFn: async (client: Omit<Client, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (client: Omit<Client, 'id' | 'user_id' | 'organization_id' | 'created_at' | 'updated_at'>) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user logged in');
+      if (!organizationId) throw new Error('No organization found');
 
       const { data, error } = await supabase
         .from('clients')
-        .insert({ ...client, user_id: user.id })
+        .insert({ 
+          ...client, 
+          user_id: user.id,
+          organization_id: organizationId,
+        })
         .select()
         .single();
       
