@@ -1,10 +1,19 @@
 export type JobStatus = 'pending' | 'in_progress' | 'done';
 
+export interface Organization {
+  id: string;
+  name: string;
+  ruc: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Profile {
   id: string;
   full_name: string | null;
   phone: string | null;
   company: string | null;
+  organization_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -12,6 +21,7 @@ export interface Profile {
 export interface Client {
   id: string;
   user_id: string;
+  organization_id: string | null;
   name: string;
   razon_social: string | null;
   cuit: string | null;
@@ -30,6 +40,7 @@ export interface Client {
 export interface Farm {
   id: string;
   client_id: string;
+  organization_id: string | null;
   name: string;
   cultivo: string | null;
   area_hectares: number | null;

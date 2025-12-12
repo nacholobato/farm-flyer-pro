@@ -64,6 +64,7 @@ export type Database = {
           idcliente: string | null
           name: string
           notes: string | null
+          organization_id: string | null
           otro_contacto_1: string | null
           otro_contacto_2: string | null
           phone: string | null
@@ -82,6 +83,7 @@ export type Database = {
           idcliente?: string | null
           name: string
           notes?: string | null
+          organization_id?: string | null
           otro_contacto_1?: string | null
           otro_contacto_2?: string | null
           phone?: string | null
@@ -100,6 +102,7 @@ export type Database = {
           idcliente?: string | null
           name?: string
           notes?: string | null
+          organization_id?: string | null
           otro_contacto_1?: string | null
           otro_contacto_2?: string | null
           phone?: string | null
@@ -110,7 +113,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clients_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       farms: {
         Row: {
@@ -123,6 +134,7 @@ export type Database = {
           location: string | null
           name: string
           notes: string | null
+          organization_id: string | null
           updated_at: string
         }
         Insert: {
@@ -135,6 +147,7 @@ export type Database = {
           location?: string | null
           name: string
           notes?: string | null
+          organization_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -147,6 +160,7 @@ export type Database = {
           location?: string | null
           name?: string
           notes?: string | null
+          organization_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -155,6 +169,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farms_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -237,12 +258,37 @@ export type Database = {
           },
         ]
       }
+      organizations: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          ruc: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          ruc?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          ruc?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           company: string | null
           created_at: string
           full_name: string | null
           id: string
+          organization_id: string | null
           phone: string | null
           updated_at: string
         }
@@ -251,6 +297,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id: string
+          organization_id?: string | null
           phone?: string | null
           updated_at?: string
         }
@@ -259,17 +306,26 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          organization_id?: string | null
           phone?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_organization_id: { Args: { _user_id: string }; Returns: string }
     }
     Enums: {
       job_status: "pending" | "in_progress" | "done"
