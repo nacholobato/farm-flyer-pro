@@ -61,6 +61,7 @@ export type Database = {
           created_at: string
           cuit: string | null
           id: string
+          idcliente: string | null
           name: string
           notes: string | null
           otro_contacto_1: string | null
@@ -78,6 +79,7 @@ export type Database = {
           created_at?: string
           cuit?: string | null
           id?: string
+          idcliente?: string | null
           name: string
           notes?: string | null
           otro_contacto_1?: string | null
@@ -95,6 +97,7 @@ export type Database = {
           created_at?: string
           cuit?: string | null
           id?: string
+          idcliente?: string | null
           name?: string
           notes?: string | null
           otro_contacto_1?: string | null
