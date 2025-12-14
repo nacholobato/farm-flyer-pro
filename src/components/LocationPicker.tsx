@@ -13,8 +13,22 @@ import {
 } from '@/components/ui/dialog';
 import { MapPin, Navigation, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Fix for default marker icon
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+
+let DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41]
+});
+
+L.Marker.prototype.options.icon = DefaultIcon;
 
 interface LocationPickerProps {
   value: string;
@@ -22,16 +36,34 @@ interface LocationPickerProps {
   placeholder?: string;
 }
 
-const MAPBOX_TOKEN = 'pk.eyJ1IjoibG92YWJsZS1kZXYiLCJhIjoiY200aGt3NndzMDM5dTJpb21hZXFoeXFnbCJ9.a0WkNcyF1opUDL_SmOc69w';
+function LocationMarker({ position, setPosition, setLatitude, setLongitude }: any) {
+  const map = useMapEvents({
+    click(e) {
+      const { lat, lng } = e.latlng;
+      setPosition(e.latlng);
+      setLatitude(lat.toFixed(6));
+      setLongitude(lng.toFixed(6));
+      map.flyTo(e.latlng, map.getZoom());
+    },
+  });
+
+  useEffect(() => {
+    if (position) {
+      map.flyTo(position, map.getZoom());
+    }
+  }, [position, map]);
+
+  return position === null ? null : (
+    <Marker position={position}></Marker>
+  );
+}
 
 export function LocationPicker({ value, onChange, placeholder = "Coordenadas GPS" }: LocationPickerProps) {
   const [open, setOpen] = useState(false);
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
+  const [position, setPosition] = useState<L.LatLng | null>(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
-  const marker = useRef<mapboxgl.Marker | null>(null);
 
   // Parse existing value when dialog opens
   useEffect(() => {
@@ -40,107 +72,22 @@ export function LocationPicker({ value, onChange, placeholder = "Coordenadas GPS
       if (coords.length === 2) {
         setLatitude(coords[0]);
         setLongitude(coords[1]);
+        const lat = parseFloat(coords[0]);
+        const lng = parseFloat(coords[1]);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          setPosition(new L.LatLng(lat, lng));
+        }
       }
     }
   }, [open, value]);
 
-  // Initialize map when dialog opens
+  // Handle manual input changes
   useEffect(() => {
-    if (!open || !mapContainer.current) return;
-
-    // Small delay to ensure dialog is rendered
-    const timeout = setTimeout(() => {
-      if (!mapContainer.current || map.current) return;
-
-      mapboxgl.accessToken = MAPBOX_TOKEN;
-
-      const initialLat = latitude ? parseFloat(latitude) : -31.4167;
-      const initialLng = longitude ? parseFloat(longitude) : -64.1833;
-
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/satellite-streets-v12',
-        center: [initialLng, initialLat],
-        zoom: latitude && longitude ? 14 : 6,
-      });
-
-      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-
-      // Add marker if coordinates exist
-      if (latitude && longitude) {
-        marker.current = new mapboxgl.Marker({ color: '#22c55e', draggable: true })
-          .setLngLat([initialLng, initialLat])
-          .addTo(map.current);
-
-        marker.current.on('dragend', () => {
-          const lngLat = marker.current?.getLngLat();
-          if (lngLat) {
-            setLatitude(lngLat.lat.toFixed(6));
-            setLongitude(lngLat.lng.toFixed(6));
-          }
-        });
-      }
-
-      // Click to add/move marker
-      map.current.on('click', (e) => {
-        const { lng, lat } = e.lngLat;
-        setLatitude(lat.toFixed(6));
-        setLongitude(lng.toFixed(6));
-
-        if (marker.current) {
-          marker.current.setLngLat([lng, lat]);
-        } else if (map.current) {
-          marker.current = new mapboxgl.Marker({ color: '#22c55e', draggable: true })
-            .setLngLat([lng, lat])
-            .addTo(map.current);
-
-          marker.current.on('dragend', () => {
-            const lngLat = marker.current?.getLngLat();
-            if (lngLat) {
-              setLatitude(lngLat.lat.toFixed(6));
-              setLongitude(lngLat.lng.toFixed(6));
-            }
-          });
-        }
-      });
-    }, 100);
-
-    return () => {
-      clearTimeout(timeout);
-      if (map.current) {
-        map.current.remove();
-        map.current = null;
-      }
-      marker.current = null;
-    };
-  }, [open]);
-
-  // Update marker when coordinates change manually
-  useEffect(() => {
-    if (!map.current || !latitude || !longitude) return;
-
     const lat = parseFloat(latitude);
     const lng = parseFloat(longitude);
-
-    if (isNaN(lat) || isNaN(lng)) return;
-
-    if (marker.current) {
-      marker.current.setLngLat([lng, lat]);
-    } else {
-      marker.current = new mapboxgl.Marker({ color: '#22c55e', draggable: true })
-        .setLngLat([lng, lat])
-        .addTo(map.current);
-
-      marker.current.on('dragend', () => {
-        const lngLat = marker.current?.getLngLat();
-        if (lngLat) {
-          setLatitude(lngLat.lat.toFixed(6));
-          setLongitude(lngLat.lng.toFixed(6));
-        }
-      });
+    if (!isNaN(lat) && !isNaN(lng)) {
+      setPosition(new L.LatLng(lat, lng));
     }
-
-    map.current.flyTo({ center: [lng, lat], zoom: 14 });
   }, [latitude, longitude]);
 
   const getCurrentLocation = () => {
@@ -151,11 +98,12 @@ export function LocationPicker({ value, onChange, placeholder = "Coordenadas GPS
 
     setIsGettingLocation(true);
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = position.coords.latitude.toFixed(6);
-        const lng = position.coords.longitude.toFixed(6);
+      (pos) => {
+        const lat = pos.coords.latitude.toFixed(6);
+        const lng = pos.coords.longitude.toFixed(6);
         setLatitude(lat);
         setLongitude(lng);
+        setPosition(new L.LatLng(pos.coords.latitude, pos.coords.longitude));
         setIsGettingLocation(false);
         toast.success('Ubicación obtenida correctamente');
       },
@@ -198,14 +146,7 @@ export function LocationPicker({ value, onChange, placeholder = "Coordenadas GPS
   const handleClear = () => {
     setLatitude('');
     setLongitude('');
-    if (marker.current) {
-      marker.current.remove();
-      marker.current = null;
-    }
-  };
-
-  const handleClose = () => {
-    setOpen(false);
+    setPosition(null);
   };
 
   return (
@@ -253,10 +194,24 @@ export function LocationPicker({ value, onChange, placeholder = "Coordenadas GPS
           </Button>
 
           {/* Map */}
-          <div 
-            ref={mapContainer} 
-            className="w-full h-64 rounded-lg border overflow-hidden"
-          />
+          <div className="w-full h-64 rounded-lg border overflow-hidden relative z-0">
+            <MapContainer
+              center={[-31.4167, -64.1833]}
+              zoom={6}
+              style={{ height: '100%', width: '100%' }}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              <LocationMarker
+                position={position}
+                setPosition={setPosition}
+                setLatitude={setLatitude}
+                setLongitude={setLongitude}
+              />
+            </MapContainer>
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
@@ -300,7 +255,7 @@ export function LocationPicker({ value, onChange, placeholder = "Coordenadas GPS
           <Button type="button" variant="ghost" onClick={handleClear}>
             Limpiar
           </Button>
-          <Button type="button" variant="outline" onClick={handleClose}>
+          <Button type="button" variant="outline" onClick={() => setOpen(false)}>
             Cancelar
           </Button>
           <Button type="button" onClick={handleSave}>

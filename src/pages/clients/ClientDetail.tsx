@@ -34,29 +34,31 @@ import {
 import { Mail, Phone, MapPin, Edit, Trash2, Plus, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { LocationPicker } from '@/components/LocationPicker';
+import { LocationViewer } from '@/components/LocationViewer';
 import { Farm } from '@/types/database';
 
 export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
+
   const { data: client, isLoading: clientLoading } = useClient(id);
   const { data: farms, isLoading: farmsLoading } = useFarms(id);
   const { data: jobs, isLoading: jobsLoading } = useJobs({ clientId: id });
-  
+
   const updateClient = useUpdateClient();
   const deleteClient = useDeleteClient();
   const createFarm = useCreateFarm();
   const updateFarm = useUpdateFarm();
   const deleteFarm = useDeleteFarm();
-  
+
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [farmDialogOpen, setFarmDialogOpen] = useState(false);
   const [editFarmDialogOpen, setEditFarmDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteFarmId, setDeleteFarmId] = useState<string | null>(null);
   const [editingFarm, setEditingFarm] = useState<Farm | null>(null);
-  
+  const [viewLocation, setViewLocation] = useState<{ location: string; name: string } | null>(null);
+
   const [editData, setEditData] = useState({
     name: '',
     razon_social: '',
@@ -70,7 +72,7 @@ export default function ClientDetail() {
     telefono_2: '',
     notes: '',
   });
-  
+
   const [farmData, setFarmData] = useState({
     name: '',
     cultivo: '',
@@ -88,7 +90,7 @@ export default function ClientDetail() {
   });
 
   if (clientLoading || farmsLoading || jobsLoading) return <LoadingPage />;
-  
+
   if (!client) {
     return (
       <div className="py-12 text-center">
@@ -131,8 +133,8 @@ export default function ClientDetail() {
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    await updateClient.mutateAsync({ 
-      id: client.id, 
+    await updateClient.mutateAsync({
+      id: client.id,
       ...editData,
       razon_social: editData.razon_social || null,
       cuit: editData.cuit || null,
@@ -226,7 +228,7 @@ export default function ClientDetail() {
               </div>
             )}
           </div>
-          
+
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {client.contacto_principal && (
               <div>
@@ -415,10 +417,17 @@ export default function ClientDetail() {
                       </p>
                     )}
                     {farm.location && (
-                      <p>
-                        <span className="text-muted-foreground">Ubicación:</span>{' '}
-                        <span className="font-medium">{farm.location}</span>
-                      </p>
+                      <div className="flex items-center gap-2 pt-1">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="h-7 text-xs"
+                          onClick={() => setViewLocation({ location: farm.location!, name: farm.name })}
+                        >
+                          <MapPin className="mr-1 h-3 w-3" />
+                          Ver Ubicación
+                        </Button>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
@@ -440,8 +449,8 @@ export default function ClientDetail() {
           ) : (
             <div className="space-y-3">
               {jobs?.map((job) => (
-                <Link 
-                  key={job.id} 
+                <Link
+                  key={job.id}
                   to={`/jobs/${job.id}`}
                   className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
                 >
@@ -690,6 +699,14 @@ export default function ClientDetail() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Location Viewer */}
+      <LocationViewer
+        open={!!viewLocation}
+        onOpenChange={(open) => !open && setViewLocation(null)}
+        location={viewLocation?.location || null}
+        title={viewLocation ? `Ubicación: ${viewLocation.name}` : undefined}
+      />
     </div>
   );
 }
