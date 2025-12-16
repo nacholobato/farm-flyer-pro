@@ -1,10 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { 
-  LayoutDashboard, 
-  Users, 
-  MapPin, 
-  ClipboardList, 
+import {
+  LayoutDashboard,
+  Users,
+  MapPin,
+  ClipboardList,
   User,
   Menu,
   X,
@@ -17,7 +17,7 @@ import { useAuth } from '@/hooks/useAuth';
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/clients', label: 'Clientes', icon: Users },
-  { href: '/farms', label: 'Campos', icon: MapPin },
+  { href: '/farms', label: 'Fincas', icon: MapPin },
   { href: '/jobs', label: 'Trabajos', icon: ClipboardList },
   { href: '/profile', label: 'Perfil', icon: User },
 ];
@@ -34,12 +34,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="flex h-full flex-col">
           <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-6">
             <Plane className="h-8 w-8 text-sidebar-primary" />
-            <span className="text-xl font-bold text-sidebar-foreground">FarmFlight</span>
+            <span className="text-xl font-bold text-sidebar-foreground">SmartGrowth OPS</span>
           </div>
-          
+
           <nav className="flex-1 space-y-1 px-3 py-4">
             {navItems.map((item) => {
-              const isActive = location.pathname === item.href || 
+              const isActive = location.pathname === item.href ||
                 (item.href !== '/' && location.pathname.startsWith(item.href));
               return (
                 <Link
@@ -47,8 +47,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   to={item.href}
                   className={cn(
                     'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-                    isActive 
-                      ? 'bg-sidebar-primary text-sidebar-primary-foreground' 
+                    isActive
+                      ? 'bg-sidebar-primary text-sidebar-primary-foreground'
                       : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                   )}
                 >
@@ -61,9 +61,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
           <div className="border-t border-sidebar-border p-4">
             <p className="mb-2 truncate text-xs text-sidebar-foreground/70">{user?.email}</p>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               className="w-full border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent"
               onClick={signOut}
             >
@@ -102,8 +102,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
                     'flex items-center gap-3 rounded-lg px-4 py-3 text-base font-medium transition-colors',
-                    isActive 
-                      ? 'bg-primary text-primary-foreground' 
+                    isActive
+                      ? 'bg-primary text-primary-foreground'
                       : 'hover:bg-muted'
                   )}
                 >
@@ -114,9 +114,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             })}
             <div className="pt-4">
               <p className="mb-2 px-4 text-sm text-muted-foreground">{user?.email}</p>
-              <Button 
-                variant="outline" 
-                className="w-full" 
+              <Button
+                variant="outline"
+                className="w-full"
                 onClick={() => { signOut(); setMobileMenuOpen(false); }}
               >
                 Cerrar sesión
