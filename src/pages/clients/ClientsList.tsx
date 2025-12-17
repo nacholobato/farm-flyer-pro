@@ -35,7 +35,7 @@ export default function ClientsList() {
   const { data: clients, isLoading } = useClients();
   const createClient = useCreateClient();
   const deleteClient = useDeleteClient();
-  
+
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -74,10 +74,10 @@ export default function ClientsList() {
       notes: formData.notes || null,
     });
     setDialogOpen(false);
-    setFormData({ 
+    setFormData({
       name: '', razon_social: '', cuit: '', contacto_principal: '', puesto: '',
-      phone: '', otro_contacto_1: '', telefono_1: '', otro_contacto_2: '', 
-      telefono_2: '', notes: '' 
+      phone: '', otro_contacto_1: '', telefono_1: '', otro_contacto_2: '',
+      telefono_2: '', notes: ''
     });
   };
 
@@ -260,8 +260,8 @@ export default function ClientsList() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredClients?.map((client) => (
-            <Card 
-              key={client.id} 
+            <Card
+              key={client.id}
               className="cursor-pointer transition-all hover:shadow-md hover:border-primary/30"
               onClick={() => navigate(`/clients/${client.id}`)}
             >
@@ -284,7 +284,7 @@ export default function ClientsList() {
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
-                
+
                 <div className="mt-4 space-y-2 text-sm text-muted-foreground">
                   {client.phone && (
                     <div className="flex items-center gap-2">
@@ -311,7 +311,7 @@ export default function ClientsList() {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar cliente?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción eliminará el cliente y todos sus campos y trabajos asociados. Esta acción no se puede deshacer.
+              Esta acción eliminará el cliente y todas sus fincas y trabajos asociados. Esta acción no se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

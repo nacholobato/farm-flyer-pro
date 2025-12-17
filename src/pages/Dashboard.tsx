@@ -25,45 +25,45 @@ export default function Dashboard() {
   const recentJobs = jobs?.slice(0, 5) || [];
 
   const stats = [
-    { 
-      label: 'Clientes', 
-      value: clients?.length || 0, 
-      icon: Users, 
+    {
+      label: 'Clientes',
+      value: clients?.length || 0,
+      icon: Users,
       href: '/clients',
       color: 'bg-info/10 text-info'
     },
-    { 
-      label: 'Campos', 
-      value: farms?.length || 0, 
-      icon: MapPin, 
+    {
+      label: 'Fincas',
+      value: farms?.length || 0,
+      icon: MapPin,
       href: '/farms',
       color: 'bg-success/10 text-success'
     },
-    { 
-      label: 'Trabajos Pendientes', 
-      value: pendingJobs.length, 
-      icon: Clock, 
+    {
+      label: 'Trabajos Pendientes',
+      value: pendingJobs.length,
+      icon: Clock,
       href: '/jobs?status=pending',
       color: 'bg-warning/10 text-warning'
     },
-    { 
-      label: 'En Progreso', 
-      value: inProgressJobs.length, 
-      icon: AlertCircle, 
+    {
+      label: 'En Progreso',
+      value: inProgressJobs.length,
+      icon: AlertCircle,
       href: '/jobs?status=in_progress',
       color: 'bg-info/10 text-info'
     },
-    { 
-      label: 'Completados', 
-      value: doneJobs.length, 
-      icon: CheckCircle, 
+    {
+      label: 'Completados',
+      value: doneJobs.length,
+      icon: CheckCircle,
       href: '/jobs?status=done',
       color: 'bg-success/10 text-success'
     },
-    { 
-      label: 'Total Trabajos', 
-      value: jobs?.length || 0, 
-      icon: ClipboardList, 
+    {
+      label: 'Total Trabajos',
+      value: jobs?.length || 0,
+      icon: ClipboardList,
       href: '/jobs',
       color: 'bg-primary/10 text-primary'
     },
@@ -71,8 +71,8 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <PageHeader 
-        title="Dashboard" 
+      <PageHeader
+        title="Dashboard"
         description="Resumen general de tu operación agrícola"
       />
 
@@ -102,8 +102,8 @@ export default function Dashboard() {
             <CardTitle>Trabajos Recientes</CardTitle>
             <CardDescription>Últimos trabajos registrados</CardDescription>
           </div>
-          <Link 
-            to="/jobs" 
+          <Link
+            to="/jobs"
             className="flex items-center gap-1 text-sm text-primary hover:underline"
           >
             Ver todos <ArrowRight className="h-4 w-4" />
@@ -117,8 +117,8 @@ export default function Dashboard() {
           ) : (
             <div className="space-y-3">
               {recentJobs.map((job) => (
-                <Link 
-                  key={job.id} 
+                <Link
+                  key={job.id}
                   to={`/jobs/${job.id}`}
                   className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
                 >

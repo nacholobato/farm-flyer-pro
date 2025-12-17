@@ -44,22 +44,22 @@ import { Link } from 'react-router-dom';
 export default function JobDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
+
   const { data: job, isLoading: jobLoading } = useJob(id);
   const { data: agrochemicals, isLoading: agroLoading } = useAgrochemicals(id);
-  
+
   const updateJob = useUpdateJob();
   const deleteJob = useDeleteJob();
   const createAgrochemical = useCreateAgrochemical();
   const updateAgrochemical = useUpdateAgrochemical();
   const deleteAgrochemical = useDeleteAgrochemical();
-  
+
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [agroDialogOpen, setAgroDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteAgroId, setDeleteAgroId] = useState<string | null>(null);
   const [editAgroId, setEditAgroId] = useState<string | null>(null);
-  
+
   const [editData, setEditData] = useState({
     title: '',
     description: '',
@@ -70,7 +70,7 @@ export default function JobDetail() {
     status: 'pending' as JobStatus,
     notes: '',
   });
-  
+
   const [agroData, setAgroData] = useState({
     product_name: '',
     dose: '',
@@ -79,7 +79,7 @@ export default function JobDetail() {
   });
 
   if (jobLoading || agroLoading) return <LoadingPage />;
-  
+
   if (!job) {
     return (
       <div className="py-12 text-center">
@@ -234,7 +234,7 @@ export default function JobDetail() {
                   <MapPin className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Campo</p>
+                  <p className="text-sm text-muted-foreground">Fincas</p>
                   <p className="font-medium">{job.farm?.name}</p>
                 </div>
               </div>
@@ -326,8 +326,8 @@ export default function JobDetail() {
             ) : (
               <div className="space-y-3">
                 {agrochemicals?.map((agro, index) => (
-                  <div 
-                    key={agro.id} 
+                  <div
+                    key={agro.id}
                     className="flex items-center justify-between rounded-lg border p-3"
                   >
                     <div className="flex items-center gap-3">
@@ -423,8 +423,8 @@ export default function JobDetail() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="editStatus">Estado</Label>
-                  <Select 
-                    value={editData.status} 
+                  <Select
+                    value={editData.status}
                     onValueChange={(v: JobStatus) => setEditData({ ...editData, status: v })}
                   >
                     <SelectTrigger>
@@ -503,8 +503,8 @@ export default function JobDetail() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="agroUnit">Unidad</Label>
-                  <Select 
-                    value={agroData.unit} 
+                  <Select
+                    value={agroData.unit}
                     onValueChange={(v) => setAgroData({ ...agroData, unit: v })}
                   >
                     <SelectTrigger>

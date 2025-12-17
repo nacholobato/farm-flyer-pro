@@ -34,10 +34,10 @@ export default function JobCreate() {
   const { data: clients, isLoading: clientsLoading } = useClients();
   const createJob = useCreateJob();
   const createAgrochemical = useCreateAgrochemical();
-  
+
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const { data: farms, isLoading: farmsLoading } = useFarms(selectedClientId || undefined);
-  
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -72,7 +72,7 @@ export default function JobCreate() {
   };
 
   const updateAgrochemical = (id: string, field: keyof AgrochemicalEntry, value: string) => {
-    setAgrochemicals(agrochemicals.map(a => 
+    setAgrochemicals(agrochemicals.map(a =>
       a.id === id ? { ...a, [field]: value } : a
     ));
   };
@@ -155,8 +155,8 @@ export default function JobCreate() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="client">Cliente *</Label>
-                <Select 
-                  value={selectedClientId} 
+                <Select
+                  value={selectedClientId}
                   onValueChange={setSelectedClientId}
                   required
                 >
@@ -174,9 +174,9 @@ export default function JobCreate() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="farm">Campo *</Label>
-                <Select 
-                  value={formData.farm_id} 
+                <Label htmlFor="farm">Fincas *</Label>
+                <Select
+                  value={formData.farm_id}
                   onValueChange={(v) => setFormData({ ...formData, farm_id: v })}
                   disabled={!selectedClientId || farmsLoading}
                   required
@@ -184,9 +184,9 @@ export default function JobCreate() {
                   <SelectTrigger>
                     <SelectValue placeholder={
                       !selectedClientId ? 'Selecciona un cliente primero' :
-                      farmsLoading ? 'Cargando...' :
-                      farms?.length === 0 ? 'No hay campos' :
-                      'Seleccionar campo'
+                        farmsLoading ? 'Cargando...' :
+                          farms?.length === 0 ? 'No hay Fincas' :
+                            'Seleccionar finca'
                     } />
                   </SelectTrigger>
                   <SelectContent>
@@ -308,8 +308,8 @@ export default function JobCreate() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="status">Estado</Label>
-                <Select 
-                  value={formData.status} 
+                <Select
+                  value={formData.status}
                   onValueChange={(v: JobStatus) => setFormData({ ...formData, status: v })}
                 >
                   <SelectTrigger>
@@ -371,8 +371,8 @@ export default function JobCreate() {
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs">Unidad</Label>
-                        <Select 
-                          value={agro.unit} 
+                        <Select
+                          value={agro.unit}
                           onValueChange={(v) => updateAgrochemical(agro.id, 'unit', v)}
                         >
                           <SelectTrigger>

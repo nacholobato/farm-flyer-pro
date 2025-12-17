@@ -594,7 +594,7 @@ export default function ClientDetail() {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar cliente?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción eliminará el cliente, todos sus campos y trabajos asociados. No se puede deshacer.
+              Esta acción eliminará el cliente, todas sus fincas y trabajos asociados. No se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
