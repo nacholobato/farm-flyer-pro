@@ -13,7 +13,7 @@ export function useAgrochemicals(jobId: string | undefined) {
         .select('*')
         .eq('job_id', jobId)
         .order('application_order');
-      
+
       if (error) throw error;
       return data as AgrochemicalUsed[];
     },
@@ -31,7 +31,7 @@ export function useCreateAgrochemical() {
         .insert(agrochemical)
         .select()
         .single();
-      
+
       if (error) throw error;
       return data;
     },
@@ -56,7 +56,7 @@ export function useUpdateAgrochemical() {
         .eq('id', id)
         .select()
         .single();
-      
+
       if (error) throw error;
       return { ...data, job_id };
     },
@@ -79,7 +79,7 @@ export function useDeleteAgrochemical() {
         .from('agrochemicals_used')
         .delete()
         .eq('id', id);
-      
+
       if (error) throw error;
       return { jobId };
     },
@@ -89,6 +89,36 @@ export function useDeleteAgrochemical() {
     },
     onError: (error) => {
       toast.error('Error al eliminar agroquímico: ' + error.message);
+    },
+  });
+}
+
+export function useCreateAgrochemicalsBulk() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (agrochemicals: Omit<AgrochemicalUsed, 'id' | 'created_at'>[]) => {
+      if (agrochemicals.length === 0) {
+        return [];
+      }
+
+      const { data, error } = await supabase
+        .from('agrochemicals_used')
+        .insert(agrochemicals)
+        .select();
+
+      if (error) throw error;
+      return data as AgrochemicalUsed[];
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate for the job_id (all agrochemicals have same job_id)
+      if (variables.length > 0) {
+        queryClient.invalidateQueries({ queryKey: ['agrochemicals', variables[0].job_id] });
+      }
+      toast.success(`${data.length} producto(s) agregado(s) exitosamente`);
+    },
+    onError: (error) => {
+      toast.error('Error al agregar productos: ' + error.message);
     },
   });
 }

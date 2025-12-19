@@ -77,10 +77,12 @@ export interface Job {
 export interface AgrochemicalUsed {
   id: string;
   job_id: string;
+  product_id: string | null;
   product_name: string;
   dose: number;
   unit: string;
   application_order: number;
+  cost_per_unit: number | null;
   notes: string | null;
   created_at: string;
 }
@@ -89,4 +91,54 @@ export interface JobWithDetails extends Job {
   client: Client;
   farm: Farm;
   agrochemicals: AgrochemicalUsed[];
+}
+
+export type ResourceCategory =
+  | 'weather_climate'
+  | 'crop_information'
+  | 'market_prices'
+  | 'pest_management'
+  | 'education_research'
+  | 'data_statistics'
+  | 'equipment'
+  | 'regulations'
+  | 'other';
+
+export interface Resource {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  category: ResourceCategory;
+  file_path: string;
+  file_name: string;
+  file_size: number | null;
+  mime_type: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Product {
+  id: string;
+  created_at: string;
+  name: string;
+  standard_dose: number | null;
+  unit: string;
+  organization_id: string;
+}
+
+export interface Agrochemical {
+  id: string;
+  created_at: string;
+  name: string;
+  active_ingredient: string | null;
+  category: string | null;
+  mode_of_action: string | null;
+  toxicological_class: string | null;
+  manufacturer: string | null;
+  function: string | null;
+  safety_precautions: string | null;
+  label_url: string | null;
+  organization_id: string;
 }

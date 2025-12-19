@@ -8,7 +8,10 @@ import {
   User,
   Menu,
   X,
-  Plane
+  Plane,
+  BookOpen,
+  Calculator,
+  FlaskConical
 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -19,6 +22,9 @@ const navItems = [
   { href: '/clients', label: 'Clientes', icon: Users },
   { href: '/farms', label: 'Fincas', icon: MapPin },
   { href: '/jobs', label: 'Trabajos', icon: ClipboardList },
+  { href: '/resources', label: 'Recursos', icon: BookOpen },
+  { href: '/tools/calculator', label: 'Calculadora', icon: Calculator },
+  { href: '/catalog', label: 'Catálogo', icon: FlaskConical },
   { href: '/profile', label: 'Perfil', icon: User },
 ];
 

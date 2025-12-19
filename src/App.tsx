@@ -19,6 +19,9 @@ import JobsList from "@/pages/jobs/JobsList";
 import JobCreate from "@/pages/jobs/JobCreate";
 import JobDetail from "@/pages/jobs/JobDetail";
 import ProfilePage from "@/pages/Profile";
+import Resources from "@/pages/Resources";
+import CalculatorPage from "@/pages/tools/CalculatorPage";
+import AgrochemicalsCatalog from "@/pages/catalog/AgrochemicalsCatalog";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -74,20 +77,25 @@ function AppRoutes() {
     <Routes>
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
       <Route path="/organization-setup" element={<OrganizationSetupRoute />} />
-      
+
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      
+
       <Route path="/clients" element={<ProtectedRoute><ClientsList /></ProtectedRoute>} />
       <Route path="/clients/:id" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
-      
+
       <Route path="/farms" element={<ProtectedRoute><FarmsList /></ProtectedRoute>} />
-      
+
       <Route path="/jobs" element={<ProtectedRoute><JobsList /></ProtectedRoute>} />
       <Route path="/jobs/new" element={<ProtectedRoute><JobCreate /></ProtectedRoute>} />
       <Route path="/jobs/:id" element={<ProtectedRoute><JobDetail /></ProtectedRoute>} />
-      
+
       <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-      
+
+      <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
+
+      <Route path="/tools/calculator" element={<ProtectedRoute><CalculatorPage /></ProtectedRoute>} />
+      <Route path="/catalog" element={<ProtectedRoute><AgrochemicalsCatalog /></ProtectedRoute>} />
+
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

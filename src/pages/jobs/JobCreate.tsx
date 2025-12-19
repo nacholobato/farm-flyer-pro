@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useClients } from '@/hooks/useClients';
 import { useFarms } from '@/hooks/useFarms';
 import { useCreateJob } from '@/hooks/useJobs';
-import { useCreateAgrochemical } from '@/hooks/useAgrochemicals';
+import { useCreateAgrochemicalsBulk } from '@/hooks/useAgrochemicals';
+import { useProducts } from '@/hooks/useProducts';
 import { JobStatus } from '@/types/database';
 import { PageHeader } from '@/components/ui/page-header';
 import { LoadingPage } from '@/components/ui/loading-spinner';
@@ -23,17 +24,21 @@ import { Plus, Trash2, Loader2, GripVertical } from 'lucide-react';
 
 interface AgrochemicalEntry {
   id: string;
+  product_id: string | null;
   product_name: string;
   dose: string;
   unit: string;
+  cost_per_unit: string;
   notes: string;
+  manualEntry: boolean;
 }
 
 export default function JobCreate() {
   const navigate = useNavigate();
   const { data: clients, isLoading: clientsLoading } = useClients();
+  const { data: products, isLoading: productsLoading } = useProducts();
   const createJob = useCreateJob();
-  const createAgrochemical = useCreateAgrochemical();
+  const createAgrochemicalsBulk = useCreateAgrochemicalsBulk();
 
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const { data: farms, isLoading: farmsLoading } = useFarms(selectedClientId || undefined);
@@ -67,14 +72,51 @@ export default function JobCreate() {
   const addAgrochemical = () => {
     setAgrochemicals([
       ...agrochemicals,
-      { id: crypto.randomUUID(), product_name: '', dose: '', unit: 'L/ha', notes: '' }
+      {
+        id: crypto.randomUUID(),
+        product_id: null,
+        product_name: '',
+        dose: '',
+        unit: 'L/ha',
+        cost_per_unit: '',
+        notes: '',
+        manualEntry: false
+      }
     ]);
   };
 
-  const updateAgrochemical = (id: string, field: keyof AgrochemicalEntry, value: string) => {
+  const updateAgrochemical = (id: string, field: keyof AgrochemicalEntry, value: string | boolean) => {
     setAgrochemicals(agrochemicals.map(a =>
       a.id === id ? { ...a, [field]: value } : a
     ));
+  };
+
+  const toggleManualEntry = (id: string) => {
+    setAgrochemicals(agrochemicals.map(a =>
+      a.id === id ? {
+        ...a,
+        manualEntry: !a.manualEntry,
+        product_id: null,
+        product_name: '',
+        dose: '',
+        unit: 'L/ha'
+      } : a
+    ));
+  };
+
+  const handleProductSelect = (agroId: string, productId: string) => {
+    const product = products?.find(p => p.id === productId);
+    if (product) {
+      setAgrochemicals(agrochemicals.map(a =>
+        a.id === agroId ? {
+          ...a,
+          product_id: productId,
+          product_name: product.name,
+          unit: product.unit,
+          dose: product.standard_dose ? product.standard_dose.toString() : ''
+        } : a
+      ));
+    }
   };
 
   const removeAgrochemical = (id: string) => {
@@ -86,6 +128,7 @@ export default function JobCreate() {
     setIsSubmitting(true);
 
     try {
+      // Step 1: Create the job
       const job = await createJob.mutateAsync({
         ...formData,
         start_date: formData.start_date || null,
@@ -100,19 +143,23 @@ export default function JobCreate() {
         notes: formData.notes || null,
       });
 
-      // Create agrochemicals
-      for (let i = 0; i < agrochemicals.length; i++) {
-        const agro = agrochemicals[i];
-        if (agro.product_name && agro.dose) {
-          await createAgrochemical.mutateAsync({
-            job_id: job.id,
-            product_name: agro.product_name,
-            dose: parseFloat(agro.dose),
-            unit: agro.unit,
-            application_order: i + 1,
-            notes: agro.notes || null,
-          });
-        }
+      // Step 2: Prepare agrochemicals for bulk insert
+      const agrochemicalsToInsert = agrochemicals
+        .filter(agro => agro.product_name && agro.dose)
+        .map((agro, index) => ({
+          job_id: job.id,
+          product_id: agro.product_id || null,
+          product_name: agro.product_name,
+          dose: parseFloat(agro.dose),
+          unit: agro.unit,
+          cost_per_unit: agro.cost_per_unit ? parseFloat(agro.cost_per_unit) : null,
+          application_order: index + 1,
+          notes: agro.notes || null,
+        }));
+
+      // Step 3: Bulk insert all agrochemicals
+      if (agrochemicalsToInsert.length > 0) {
+        await createAgrochemicalsBulk.mutateAsync(agrochemicalsToInsert);
       }
 
       navigate(`/jobs/${job.id}`);
@@ -350,43 +397,89 @@ export default function JobCreate() {
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-sm font-medium">
                       {index + 1}
                     </div>
-                    <div className="flex-1 grid gap-3 sm:grid-cols-4">
-                      <div className="space-y-1 sm:col-span-2">
-                        <Label className="text-xs">Producto *</Label>
-                        <Input
-                          value={agro.product_name}
-                          onChange={(e) => updateAgrochemical(agro.id, 'product_name', e.target.value)}
-                          placeholder="Nombre del producto"
-                        />
+                    <div className="flex-1 space-y-3">
+                      {/* Product Selection Row */}
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Producto *</Label>
+                          {agro.manualEntry ? (
+                            <Input
+                              value={agro.product_name}
+                              onChange={(e) => updateAgrochemical(agro.id, 'product_name', e.target.value)}
+                              placeholder="Nombre del producto"
+                            />
+                          ) : (
+                            <Select
+                              value={agro.product_id || ''}
+                              onValueChange={(productId) => handleProductSelect(agro.id, productId)}
+                              disabled={productsLoading}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder={productsLoading ? "Cargando..." : "Seleccionar de catálogo"} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {products?.map((product) => (
+                                  <SelectItem key={product.id} value={product.id}>
+                                    {product.name} ({product.unit})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                          <Button
+                            type="button"
+                            variant="link"
+                            size="sm"
+                            className="h-auto p-0 text-xs"
+                            onClick={() => toggleManualEntry(agro.id)}
+                          >
+                            {agro.manualEntry ? "← Seleccionar de catálogo" : "O ingresar manualmente →"}
+                          </Button>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Costo por Unidad (opcional)</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={agro.cost_per_unit}
+                            onChange={(e) => updateAgrochemical(agro.id, 'cost_per_unit', e.target.value)}
+                            placeholder="0.00"
+                          />
+                        </div>
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Dosis *</Label>
-                        <Input
-                          type="number"
-                          step="0.001"
-                          value={agro.dose}
-                          onChange={(e) => updateAgrochemical(agro.id, 'dose', e.target.value)}
-                          placeholder="0.00"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Unidad</Label>
-                        <Select
-                          value={agro.unit}
-                          onValueChange={(v) => updateAgrochemical(agro.id, 'unit', v)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="L/ha">L/ha</SelectItem>
-                            <SelectItem value="kg/ha">kg/ha</SelectItem>
-                            <SelectItem value="mL/ha">mL/ha</SelectItem>
-                            <SelectItem value="g/ha">g/ha</SelectItem>
-                            <SelectItem value="L">L</SelectItem>
-                            <SelectItem value="kg">kg</SelectItem>
-                          </SelectContent>
-                        </Select>
+
+                      {/* Dose and Unit Row */}
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Dosis *</Label>
+                          <Input
+                            type="number"
+                            step="0.001"
+                            value={agro.dose}
+                            onChange={(e) => updateAgrochemical(agro.id, 'dose', e.target.value)}
+                            placeholder="0.00"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Unidad</Label>
+                          <Select
+                            value={agro.unit}
+                            onValueChange={(v) => updateAgrochemical(agro.id, 'unit', v)}
+                            disabled={!agro.manualEntry && !!agro.product_id}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="L/ha">L/ha</SelectItem>
+                              <SelectItem value="kg/ha">kg/ha</SelectItem>
+                              <SelectItem value="mL/ha">mL/ha</SelectItem>
+                              <SelectItem value="g/ha">g/ha</SelectItem>
+                              <SelectItem value="L">L</SelectItem>
+                              <SelectItem value="kg">kg</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                     </div>
                     <Button

@@ -154,17 +154,22 @@ export default function JobDetail() {
       await updateAgrochemical.mutateAsync({
         id: editAgroId,
         job_id: job.id,
+        product_id: null, // Manual entries don't have product_id
         product_name: agroData.product_name,
         dose: parseFloat(agroData.dose),
         unit: agroData.unit,
+        cost_per_unit: null,
+        application_order: 1, // Will be preserved from existing record
         notes: agroData.notes || null,
       });
     } else {
       await createAgrochemical.mutateAsync({
         job_id: job.id,
+        product_id: null, // Manual entries don't have product_id
         product_name: agroData.product_name,
         dose: parseFloat(agroData.dose),
         unit: agroData.unit,
+        cost_per_unit: null,
         application_order: (agrochemicals?.length || 0) + 1,
         notes: agroData.notes || null,
       });
@@ -335,10 +340,27 @@ export default function JobDetail() {
                         {index + 1}
                       </span>
                       <div>
-                        <p className="font-medium text-sm">{agro.product_name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {agro.dose} {agro.unit}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-sm">{agro.product_name}</p>
+                          {agro.product_id ? (
+                            <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                              Catálogo
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-400">
+                              Manual
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>{agro.dose} {agro.unit}</span>
+                          {agro.cost_per_unit && (
+                            <>
+                              <span>•</span>
+                              <span>${agro.cost_per_unit.toFixed(2)}/{agro.unit}</span>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="flex gap-1">
