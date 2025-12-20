@@ -66,9 +66,8 @@ export default function AgrochemicalsCatalog() {
     const filteredAgrochemicals = agrochemicals?.filter(agro => {
         const query = searchQuery.toLowerCase();
         return (
-            agro.name.toLowerCase().includes(query) ||
-            agro.active_ingredient?.toLowerCase().includes(query) ||
-            ''
+            (agro.name || '').toLowerCase().includes(query) ||
+            (agro.active_ingredient || '').toLowerCase().includes(query)
         );
     });
 
