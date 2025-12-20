@@ -185,12 +185,13 @@ export default function Resources() {
             <PageHeader
                 title="Recursos Agrícolas"
                 description="Documentos y materiales de referencia para tu operación"
-            >
-                <Button onClick={() => setUploadDialogOpen(true)}>
-                    <Upload className="h-4 w-4 mr-2" />
-                    Subir Recurso
-                </Button>
-            </PageHeader>
+                actions={
+                    <Button onClick={() => setUploadDialogOpen(true)}>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Subir Recurso
+                    </Button>
+                }
+            />
 
             {/* Overview Card */}
             <Card className="glass border-primary/20">
