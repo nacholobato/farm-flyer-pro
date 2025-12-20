@@ -19,7 +19,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Trash2, Plus } from 'lucide-react';
-import { useProducts } from '@/hooks/useProducts';
+import { useAgrochemicalCatalog } from '@/hooks/useAgrochemicalCatalog';
 
 interface Ingredient {
     id: string;
@@ -42,7 +42,7 @@ export function MixCalculator() {
     const [standardDose, setStandardDose] = useState<string>('');
     const [selectedUnit, setSelectedUnit] = useState<string>('L');
 
-    const { data: products, isLoading: loadingProducts } = useProducts();
+    const { data: agrochemicals, isLoading: loadingAgrochemicals } = useAgrochemicalCatalog();
 
     const calculateRequiredAmount = (dose: number): number => {
         if (referenceHectares === 0) return 0;
@@ -57,7 +57,7 @@ export function MixCalculator() {
         }
 
         const productName = selectedProductId
-            ? products?.find(p => p.id === selectedProductId)?.name || ''
+            ? agrochemicals?.find(p => p.id === selectedProductId)?.name || ''
             : customProductName;
 
         if (!productName.trim()) {
@@ -158,13 +158,13 @@ export function MixCalculator() {
                                             }
                                         }
                                     }}
-                                    disabled={loadingProducts || !!customProductName}
+                                    disabled={loadingAgrochemicals || !!customProductName}
                                 >
                                     <SelectTrigger id="product-select">
-                                        <SelectValue placeholder={loadingProducts ? "Cargando..." : "Seleccionar producto"} />
+                                        <SelectValue placeholder={loadingAgrochemicals ? "Cargando..." : "Seleccionar producto"} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {products?.map((product) => (
+                                        {agrochemicals?.map((product) => (
                                             <SelectItem key={product.id} value={product.id}>
                                                 {product.name} ({product.unit})
                                             </SelectItem>

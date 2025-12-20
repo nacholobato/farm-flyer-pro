@@ -119,13 +119,17 @@ export interface Resource {
   updated_at: string;
 }
 
-export interface Product {
+export interface AgrochemicalUsed {
   id: string;
-  created_at: string;
-  name: string;
-  standard_dose: number | null;
+  job_id: string;
+  agrochemical_id: string | null;
+  product_name: string;
+  dose: number;
   unit: string;
-  organization_id: string;
+  application_order: number;
+  cost_per_unit: number | null;
+  notes: string | null;
+  created_at: string;
 }
 
 export interface Agrochemical {
@@ -140,5 +144,7 @@ export interface Agrochemical {
   function: string | null;
   safety_precautions: string | null;
   label_url: string | null;
+  standard_dose: number | null;
+  unit: string;
   organization_id: string;
 }

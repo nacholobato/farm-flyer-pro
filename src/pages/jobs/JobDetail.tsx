@@ -154,7 +154,7 @@ export default function JobDetail() {
       await updateAgrochemical.mutateAsync({
         id: editAgroId,
         job_id: job.id,
-        product_id: null, // Manual entries don't have product_id
+        agrochemical_id: null, // Manual entries don't have agrochemical_id
         product_name: agroData.product_name,
         dose: parseFloat(agroData.dose),
         unit: agroData.unit,
@@ -165,7 +165,7 @@ export default function JobDetail() {
     } else {
       await createAgrochemical.mutateAsync({
         job_id: job.id,
-        product_id: null, // Manual entries don't have product_id
+        agrochemical_id: null, // Manual entries don't have agrochemical_id
         product_name: agroData.product_name,
         dose: parseFloat(agroData.dose),
         unit: agroData.unit,
@@ -342,7 +342,7 @@ export default function JobDetail() {
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="font-medium text-sm">{agro.product_name}</p>
-                          {agro.product_id ? (
+                          {agro.agrochemical_id ? (
                             <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
                               Catálogo
                             </span>

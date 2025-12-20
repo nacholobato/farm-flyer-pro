@@ -4,7 +4,7 @@ import { useClients } from '@/hooks/useClients';
 import { useFarms } from '@/hooks/useFarms';
 import { useCreateJob } from '@/hooks/useJobs';
 import { useCreateAgrochemicalsBulk } from '@/hooks/useAgrochemicals';
-import { useProducts } from '@/hooks/useProducts';
+import { useAgrochemicalCatalog } from '@/hooks/useAgrochemicalCatalog';
 import { JobStatus } from '@/types/database';
 import { PageHeader } from '@/components/ui/page-header';
 import { LoadingPage } from '@/components/ui/loading-spinner';
@@ -24,7 +24,7 @@ import { Plus, Trash2, Loader2, GripVertical } from 'lucide-react';
 
 interface AgrochemicalEntry {
   id: string;
-  product_id: string | null;
+  agrochemical_id: string | null;
   product_name: string;
   dose: string;
   unit: string;
@@ -36,7 +36,7 @@ interface AgrochemicalEntry {
 export default function JobCreate() {
   const navigate = useNavigate();
   const { data: clients, isLoading: clientsLoading } = useClients();
-  const { data: products, isLoading: productsLoading } = useProducts();
+  const { data: agrochemicalsCatalog, isLoading: agrochemicalsLoading } = useAgrochemicalCatalog();
   const createJob = useCreateJob();
   const createAgrochemicalsBulk = useCreateAgrochemicalsBulk();
 
@@ -74,7 +74,7 @@ export default function JobCreate() {
       ...agrochemicals,
       {
         id: crypto.randomUUID(),
-        product_id: null,
+        agrochemical_id: null,
         product_name: '',
         dose: '',
         unit: 'L/ha',
@@ -96,7 +96,7 @@ export default function JobCreate() {
       a.id === id ? {
         ...a,
         manualEntry: !a.manualEntry,
-        product_id: null,
+        agrochemical_id: null,
         product_name: '',
         dose: '',
         unit: 'L/ha'
@@ -104,16 +104,16 @@ export default function JobCreate() {
     ));
   };
 
-  const handleProductSelect = (agroId: string, productId: string) => {
-    const product = products?.find(p => p.id === productId);
-    if (product) {
+  const handleProductSelect = (agroId: string, agrochemicalId: string) => {
+    const agrochemical = agrochemicalsCatalog?.find(p => p.id === agrochemicalId);
+    if (agrochemical) {
       setAgrochemicals(agrochemicals.map(a =>
         a.id === agroId ? {
           ...a,
-          product_id: productId,
-          product_name: product.name,
-          unit: product.unit,
-          dose: product.standard_dose ? product.standard_dose.toString() : ''
+          agrochemical_id: agrochemicalId,
+          product_name: agrochemical.name,
+          unit: agrochemical.unit,
+          dose: agrochemical.standard_dose ? agrochemical.standard_dose.toString() : ''
         } : a
       ));
     }
@@ -148,7 +148,7 @@ export default function JobCreate() {
         .filter(agro => agro.product_name && agro.dose)
         .map((agro, index) => ({
           job_id: job.id,
-          product_id: agro.product_id || null,
+          agrochemical_id: agro.agrochemical_id || null,
           product_name: agro.product_name,
           dose: parseFloat(agro.dose),
           unit: agro.unit,
@@ -410,17 +410,17 @@ export default function JobCreate() {
                             />
                           ) : (
                             <Select
-                              value={agro.product_id || ''}
-                              onValueChange={(productId) => handleProductSelect(agro.id, productId)}
-                              disabled={productsLoading}
+                              value={agro.agrochemical_id || ''}
+                              onValueChange={(agrochemicalId) => handleProductSelect(agro.id, agrochemicalId)}
+                              disabled={agrochemicalsLoading}
                             >
                               <SelectTrigger>
-                                <SelectValue placeholder={productsLoading ? "Cargando..." : "Seleccionar de catálogo"} />
+                                <SelectValue placeholder={agrochemicalsLoading ? "Cargando..." : "Seleccionar de catálogo"} />
                               </SelectTrigger>
                               <SelectContent>
-                                {products?.map((product) => (
-                                  <SelectItem key={product.id} value={product.id}>
-                                    {product.name} ({product.unit})
+                                {agrochemicalsCatalog?.map((agrochemical) => (
+                                  <SelectItem key={agrochemical.id} value={agrochemical.id}>
+                                    {agrochemical.name} ({agrochemical.unit})
                                   </SelectItem>
                                 ))}
                               </SelectContent>
