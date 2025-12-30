@@ -6,9 +6,12 @@ import { PageHeader } from '@/components/ui/page-header';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { LoadingPage } from '@/components/ui/loading-spinner';
 import { Link } from 'react-router-dom';
-import { Users, MapPin, ClipboardList, Clock, CheckCircle, AlertCircle, ArrowRight } from 'lucide-react';
-import { format } from 'date-fns';
+import { Users, Clock, CheckCircle, AlertCircle, ArrowRight, TrendingUp, Calendar as CalendarIcon } from 'lucide-react';
+import { format, subDays, startOfDay, isSameDay, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { DayPicker } from 'react-day-picker';
+import 'react-day-picker/dist/style.css';
 
 export default function Dashboard() {
   const { data: jobs, isLoading: jobsLoading } = useJobs();
@@ -24,6 +27,36 @@ export default function Dashboard() {
   const doneJobs = jobs?.filter(j => j.status === 'done') || [];
   const recentJobs = jobs?.slice(0, 5) || [];
 
+  // Prepare data for line chart (last 30 days)
+  const today = new Date();
+  const chartData = Array.from({ length: 30 }, (_, i) => {
+    const date = subDays(today, 29 - i);
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const jobsOnDate = jobs?.filter(job => {
+      const createdAt = job.created_at ? startOfDay(parseISO(job.created_at)) : null;
+      return createdAt && isSameDay(createdAt, date);
+    }).length || 0;
+
+    return {
+      date: format(date, 'dd MMM', { locale: es }),
+      fullDate: dateStr,
+      trabajos: jobsOnDate,
+    };
+  });
+
+  // Get dates with jobs for calendar highlighting
+  const datesWithJobs = jobs?.reduce((acc, job) => {
+    if (job.due_date) {
+      const dueDate = parseISO(job.due_date);
+      acc.push(dueDate);
+    }
+    if (job.start_date) {
+      const startDate = parseISO(job.start_date);
+      acc.push(startDate);
+    }
+    return acc;
+  }, [] as Date[]) || [];
+
   const stats = [
     {
       label: 'Clientes',
@@ -33,10 +66,10 @@ export default function Dashboard() {
       color: 'bg-info/10 text-info'
     },
     {
-      label: 'Fincas',
-      value: farms?.length || 0,
-      icon: MapPin,
-      href: '/farms',
+      label: 'Trabajos Completados',
+      value: doneJobs.length,
+      icon: CheckCircle,
+      href: '/jobs?status=done',
       color: 'bg-success/10 text-success'
     },
     {
@@ -47,25 +80,11 @@ export default function Dashboard() {
       color: 'bg-warning/10 text-warning'
     },
     {
-      label: 'En Progreso',
+      label: 'Trabajos en Progreso',
       value: inProgressJobs.length,
       icon: AlertCircle,
       href: '/jobs?status=in_progress',
       color: 'bg-info/10 text-info'
-    },
-    {
-      label: 'Completados',
-      value: doneJobs.length,
-      icon: CheckCircle,
-      href: '/jobs?status=done',
-      color: 'bg-success/10 text-success'
-    },
-    {
-      label: 'Total Trabajos',
-      value: jobs?.length || 0,
-      icon: ClipboardList,
-      href: '/jobs',
-      color: 'bg-primary/10 text-primary'
     },
   ];
 
@@ -77,7 +96,7 @@ export default function Dashboard() {
       />
 
       {/* Stats Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <Link key={stat.label} to={stat.href}>
             <Card className="transition-all hover:shadow-md hover:border-primary/30">
@@ -93,6 +112,80 @@ export default function Dashboard() {
             </Card>
           </Link>
         ))}
+      </div>
+
+      {/* Analytics Grid */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Jobs Timeline Chart */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              <CardTitle>Trabajos Creados</CardTitle>
+            </div>
+            <CardDescription>Últimos 30 días</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis
+                  dataKey="date"
+                  className="text-xs"
+                  tick={{ fontSize: 12 }}
+                  interval="preserveStartEnd"
+                />
+                <YAxis
+                  className="text-xs"
+                  tick={{ fontSize: 12 }}
+                  allowDecimals={false}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px'
+                  }}
+                  labelStyle={{ color: 'hsl(var(--foreground))' }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="trabajos"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={2}
+                  dot={{ fill: 'hsl(var(--primary))' }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Jobs Calendar */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <CalendarIcon className="h-5 w-5 text-primary" />
+              <CardTitle>Calendario de Trabajos</CardTitle>
+            </div>
+            <CardDescription>Fechas con trabajos programados</CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-center">
+            <DayPicker
+              mode="multiple"
+              selected={datesWithJobs}
+              locale={es}
+              className="border-0"
+              modifiersStyles={{
+                selected: {
+                  backgroundColor: 'hsl(var(--primary))',
+                  color: 'hsl(var(--primary-foreground))',
+                  fontWeight: 'bold',
+                }
+              }}
+            />
+          </CardContent>
+        </Card>
       </div>
 
       {/* Recent Jobs */}

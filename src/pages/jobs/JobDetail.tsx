@@ -239,7 +239,7 @@ export default function JobDetail() {
                   <MapPin className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Fincas</p>
+                  <p className="text-sm text-muted-foreground">Finca</p>
                   <p className="font-medium">{job.farm?.name}</p>
                 </div>
               </div>
