@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useJob, useUpdateJob, useDeleteJob } from '@/hooks/useJobs';
 import { useAgrochemicals, useCreateAgrochemical, useUpdateAgrochemical, useDeleteAgrochemical } from '@/hooks/useAgrochemicals';
+import { useAgrochemicalCatalog } from '@/hooks/useAgrochemicalCatalog';
 import { JobStatus } from '@/types/database';
 import { PageHeader } from '@/components/ui/page-header';
 import { LoadingPage } from '@/components/ui/loading-spinner';
@@ -47,6 +48,7 @@ export default function JobDetail() {
 
   const { data: job, isLoading: jobLoading } = useJob(id);
   const { data: agrochemicals, isLoading: agroLoading } = useAgrochemicals(id);
+  const { data: catalogProducts } = useAgrochemicalCatalog();
 
   const updateJob = useUpdateJob();
   const deleteJob = useDeleteJob();
@@ -72,9 +74,11 @@ export default function JobDetail() {
   });
 
   const [agroData, setAgroData] = useState({
+    catalog_id: '',
     product_name: '',
     dose: '',
     unit: 'L/ha',
+    cost_per_unit: '',
     notes: '',
   });
 
@@ -134,18 +138,45 @@ export default function JobDetail() {
       const agro = agrochemicals?.find(a => a.id === agroId);
       if (agro) {
         setAgroData({
+          catalog_id: agro.agrochemical_id || '',
           product_name: agro.product_name,
           dose: agro.dose.toString(),
           unit: agro.unit,
+          cost_per_unit: agro.cost_per_unit?.toString() || '',
           notes: agro.notes || '',
         });
         setEditAgroId(agroId);
       }
     } else {
-      setAgroData({ product_name: '', dose: '', unit: 'L/ha', notes: '' });
+      setAgroData({ catalog_id: '', product_name: '', dose: '', unit: 'L/ha', cost_per_unit: '', notes: '' });
       setEditAgroId(null);
     }
     setAgroDialogOpen(true);
+  };
+
+  const handleCatalogSelection = (catalogId: string) => {
+    if (catalogId === 'manual') {
+      setAgroData({
+        catalog_id: '',
+        product_name: '',
+        dose: '',
+        unit: 'L/ha',
+        cost_per_unit: '',
+        notes: ''
+      });
+    } else {
+      const product = catalogProducts?.find(p => p.id === catalogId);
+      if (product) {
+        setAgroData({
+          catalog_id: catalogId,
+          product_name: product.name,
+          dose: product.recommended_dose?.toString() || '',
+          unit: product.unit || 'L/ha',
+          cost_per_unit: product.cost_per_unit?.toString() || '',
+          notes: '',
+        });
+      }
+    }
   };
 
   const handleAgroSubmit = async (e: React.FormEvent) => {
@@ -154,22 +185,22 @@ export default function JobDetail() {
       await updateAgrochemical.mutateAsync({
         id: editAgroId,
         job_id: job.id,
-        agrochemical_id: null, // Manual entries don't have agrochemical_id
+        agrochemical_id: agroData.catalog_id || null,
         product_name: agroData.product_name,
         dose: parseFloat(agroData.dose),
         unit: agroData.unit,
-        cost_per_unit: null,
+        cost_per_unit: agroData.cost_per_unit ? parseFloat(agroData.cost_per_unit) : null,
         application_order: 1, // Will be preserved from existing record
         notes: agroData.notes || null,
       });
     } else {
       await createAgrochemical.mutateAsync({
         job_id: job.id,
-        agrochemical_id: null, // Manual entries don't have agrochemical_id
+        agrochemical_id: agroData.catalog_id || null,
         product_name: agroData.product_name,
         dose: parseFloat(agroData.dose),
         unit: agroData.unit,
-        cost_per_unit: null,
+        cost_per_unit: agroData.cost_per_unit ? parseFloat(agroData.cost_per_unit) : null,
         application_order: (agrochemicals?.length || 0) + 1,
         notes: agroData.notes || null,
       });
@@ -501,6 +532,25 @@ export default function JobDetail() {
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
+                <Label htmlFor="catalogSelect">Seleccionar del Catálogo</Label>
+                <Select
+                  value={agroData.catalog_id || 'manual'}
+                  onValueChange={handleCatalogSelection}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar producto..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="manual">✏️ Entrada Manual</SelectItem>
+                    {catalogProducts?.map((product) => (
+                      <SelectItem key={product.id} value={product.id}>
+                        {product.name} - {product.category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="agroProduct">Producto *</Label>
                 <Input
                   id="agroProduct"
@@ -508,6 +558,7 @@ export default function JobDetail() {
                   onChange={(e) => setAgroData({ ...agroData, product_name: e.target.value })}
                   placeholder="Nombre del producto"
                   required
+                  disabled={!!agroData.catalog_id}
                 />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -542,6 +593,17 @@ export default function JobDetail() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="agroCost">Costo por Unidad</Label>
+                <Input
+                  id="agroCost"
+                  type="number"
+                  step="0.01"
+                  value={agroData.cost_per_unit}
+                  onChange={(e) => setAgroData({ ...agroData, cost_per_unit: e.target.value })}
+                  placeholder="0.00"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="agroNotes">Notas</Label>
