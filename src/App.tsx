@@ -22,6 +22,10 @@ import ProfilePage from "@/pages/Profile";
 import Resources from "@/pages/Resources";
 import CalculatorPage from "@/pages/tools/CalculatorPage";
 import AgrochemicalsCatalog from "@/pages/catalog/AgrochemicalsCatalog";
+import WorkTeamList from "@/pages/operations/WorkTeamList";
+import DronesList from "@/pages/operations/DronesList";
+import GeneratorsList from "@/pages/operations/GeneratorsList";
+import AttendanceList from "@/pages/operations/AttendanceList";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -95,6 +99,11 @@ function AppRoutes() {
 
       <Route path="/tools/calculator" element={<ProtectedRoute><CalculatorPage /></ProtectedRoute>} />
       <Route path="/catalog" element={<ProtectedRoute><AgrochemicalsCatalog /></ProtectedRoute>} />
+
+      <Route path="/operations/team" element={<ProtectedRoute><WorkTeamList /></ProtectedRoute>} />
+      <Route path="/operations/drones" element={<ProtectedRoute><DronesList /></ProtectedRoute>} />
+      <Route path="/operations/generators" element={<ProtectedRoute><GeneratorsList /></ProtectedRoute>} />
+      <Route path="/operations/attendance" element={<ProtectedRoute><AttendanceList /></ProtectedRoute>} />
 
       <Route path="*" element={<NotFound />} />
     </Routes>

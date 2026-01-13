@@ -28,30 +28,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Search, ClipboardList, Calendar, Trash2, MapPin, Users } from 'lucide-react';
+import { Plus, Search, ClipboardList, Calendar, Trash2, MapPin, Users, LayoutList, LayoutGrid } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
+import { KanbanBoard } from '@/components/jobs/KanbanBoard';
 
 export default function JobsList() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  
+
   const initialStatus = searchParams.get('status') as JobStatus | null;
-  
+
   const { data: jobs, isLoading: jobsLoading } = useJobs();
   const { data: clients, isLoading: clientsLoading } = useClients();
   const { data: farms, isLoading: farmsLoading } = useFarms();
   const deleteJob = useDeleteJob();
-  
+
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>(initialStatus || 'all');
   const [clientFilter, setClientFilter] = useState<string>('all');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
 
   const filteredJobs = useMemo(() => {
     return jobs?.filter(job => {
-      const matchesSearch = 
+      const matchesSearch =
         job.title.toLowerCase().includes(search.toLowerCase()) ||
         job.client?.name.toLowerCase().includes(search.toLowerCase()) ||
         job.farm?.name.toLowerCase().includes(search.toLowerCase());
@@ -76,10 +78,35 @@ export default function JobsList() {
         title="Trabajos"
         description="Gestiona tus trabajos agrícolas"
         actions={
-          <Button onClick={() => navigate('/jobs/new')}>
-            <Plus className="mr-2 h-4 w-4" />
-            Nuevo Trabajo
-          </Button>
+          <div className="flex items-center gap-2">
+            {/* View Toggle */}
+            <div className="flex rounded-lg border bg-background p-1">
+              <Button
+                variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className="h-8"
+              >
+                <LayoutList className="mr-2 h-4 w-4" />
+                Lista
+              </Button>
+              <Button
+                variant={viewMode === 'kanban' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('kanban')}
+                className="h-8"
+              >
+                <LayoutGrid className="mr-2 h-4 w-4" />
+                Kanban
+              </Button>
+            </div>
+
+            {/* New Job Button */}
+            <Button onClick={() => navigate('/jobs/new')}>
+              <Plus className="mr-2 h-4 w-4" />
+              Nuevo Trabajo
+            </Button>
+          </div>
         }
       />
 
@@ -102,7 +129,7 @@ export default function JobsList() {
             <SelectContent>
               <SelectItem value="all">Todos los estados</SelectItem>
               <SelectItem value="pending">Pendiente</SelectItem>
-              <SelectItem value="in_progress">En Progreso</SelectItem>
+              <SelectItem value="in_progress">En Curso</SelectItem>
               <SelectItem value="done">Completado</SelectItem>
             </SelectContent>
           </Select>
@@ -132,11 +159,17 @@ export default function JobsList() {
             : 'Comienza creando tu primer trabajo'}
           action={{ label: 'Crear Trabajo', onClick: () => navigate('/jobs/new') }}
         />
+      ) : viewMode === 'kanban' ? (
+        <KanbanBoard
+          jobs={filteredJobs || []}
+          onJobClick={(id) => navigate(`/jobs/${id}`)}
+          onJobDelete={(id) => setDeleteId(id)}
+        />
       ) : (
         <div className="space-y-3">
           {filteredJobs?.map((job) => (
-            <Card 
-              key={job.id} 
+            <Card
+              key={job.id}
               className="cursor-pointer transition-all hover:shadow-md hover:border-primary/30"
               onClick={() => navigate(`/jobs/${job.id}`)}
             >
@@ -167,7 +200,7 @@ export default function JobsList() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-3">
                   <StatusBadge status={job.status} />
                   <Button

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Agrochemical } from '@/types/database';
+import { Agrochemical, FormulationType } from '@/types/database';
 import { toast } from 'sonner';
 import { useUserOrganizationId } from './useOrganization';
 
@@ -57,21 +57,35 @@ export function useUpdateAgrochemicalProduct() {
 
     return useMutation({
         mutationFn: async ({ id, ...product }: Partial<Agrochemical> & { id: string }) => {
-            const { data, error } = await supabase
+            console.log('Attempting to update agrochemical:', { id, product });
+
+            const { data, error, count } = await supabase
                 .from('agrochemicals')
                 .update(product)
                 .eq('id', id)
                 .select()
-                .single();
+                .maybeSingle();
 
-            if (error) throw error;
-            return data;
+            console.log('Update result:', { data, error, count });
+
+            if (error) {
+                console.error('Update error:', error);
+                throw error;
+            }
+
+            if (!data) {
+                console.warn('Update succeeded but no data returned. This might be an RLS issue.');
+            }
+
+            return data || { id };
         },
-        onSuccess: () => {
+        onSuccess: (data) => {
+            console.log('Update successful:', data);
             queryClient.invalidateQueries({ queryKey: ['agrochemical-catalog'] });
             toast.success('Producto actualizado');
         },
-        onError: (error) => {
+        onError: (error: any) => {
+            console.error('Update mutation error:', error);
             toast.error('Error al actualizar producto: ' + error.message);
         },
     });
@@ -96,5 +110,21 @@ export function useDeleteAgrochemicalProduct() {
         onError: (error) => {
             toast.error('Error al eliminar producto: ' + error.message);
         },
+    });
+}
+
+export function useFormulationTypes() {
+    return useQuery({
+        queryKey: ['formulation-types'],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('formulation_types')
+                .select('*')
+                .order('code');
+
+            if (error) throw error;
+            return data as FormulationType[];
+        },
+        staleTime: Infinity, // Formulation types are static reference data
     });
 }

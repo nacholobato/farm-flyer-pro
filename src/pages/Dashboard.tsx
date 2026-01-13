@@ -80,7 +80,7 @@ export default function Dashboard() {
       color: 'bg-warning/10 text-warning'
     },
     {
-      label: 'Trabajos en Progreso',
+      label: 'Trabajos en Curso',
       value: inProgressJobs.length,
       icon: AlertCircle,
       href: '/jobs?status=in_progress',

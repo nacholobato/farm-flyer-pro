@@ -26,12 +26,33 @@ import { Agrochemical } from '@/types/database';
 import {
     useCreateAgrochemicalProduct,
     useUpdateAgrochemicalProduct,
+    useFormulationTypes,
 } from '@/hooks/useAgrochemicalCatalog';
+
+// Helper function to get toxicological class color
+const getToxClassColor = (value: string): string => {
+    switch (value) {
+        case 'Ia':
+        case 'Ib':
+            return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+        case 'II':
+            return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
+        case 'III':
+            return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+        case 'IV':
+            return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+        case 'U':
+            return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
+        default:
+            return '';
+    }
+};
 
 const formSchema = z.object({
     name: z.string().min(1, 'El nombre es requerido'),
     active_ingredient: z.string().optional(),
     category: z.string().optional(),
+    formulation_code: z.string().optional(),
     mode_of_action: z.string().optional(),
     toxicological_class: z.string().optional(),
     manufacturer: z.string().optional(),
@@ -57,6 +78,7 @@ export function AgrochemicalForm({
 }: AgrochemicalFormProps) {
     const createProduct = useCreateAgrochemicalProduct();
     const updateProduct = useUpdateAgrochemicalProduct();
+    const { data: formulationTypes, isLoading: isLoadingFormulations } = useFormulationTypes();
 
     const {
         register,
@@ -71,6 +93,7 @@ export function AgrochemicalForm({
             name: '',
             active_ingredient: '',
             category: '',
+            formulation_code: '',
             mode_of_action: '',
             toxicological_class: '',
             manufacturer: '',
@@ -81,6 +104,7 @@ export function AgrochemicalForm({
     });
 
     const toxClass = watch('toxicological_class');
+    const formulationCode = watch('formulation_code');
 
     useEffect(() => {
         if (agrochemical) {
@@ -88,6 +112,7 @@ export function AgrochemicalForm({
                 name: agrochemical.name,
                 active_ingredient: agrochemical.active_ingredient || '',
                 category: agrochemical.category || '',
+                formulation_code: agrochemical.formulation_code || '',
                 mode_of_action: agrochemical.mode_of_action || '',
                 toxicological_class: agrochemical.toxicological_class || '',
                 manufacturer: agrochemical.manufacturer || '',
@@ -100,6 +125,7 @@ export function AgrochemicalForm({
                 name: '',
                 active_ingredient: '',
                 category: '',
+                formulation_code: '',
                 mode_of_action: '',
                 toxicological_class: '',
                 manufacturer: '',
@@ -112,7 +138,8 @@ export function AgrochemicalForm({
 
     const onSubmit = async (data: FormData) => {
         try {
-            const payload = {
+            // Build payload, conditionally including formulation_code
+            const payload: any = {
                 name: data.name,
                 active_ingredient: data.active_ingredient || null,
                 category: data.category || null,
@@ -123,6 +150,12 @@ export function AgrochemicalForm({
                 safety_precautions: data.safety_precautions || null,
                 label_url: data.label_url || null,
             };
+
+            // Only include formulation_code if it has a value
+            // This prevents errors if the migration hasn't been run yet
+            if (data.formulation_code) {
+                payload.formulation_code = data.formulation_code;
+            }
 
             if (agrochemical) {
                 await updateProduct.mutateAsync({ id: agrochemical.id, ...payload });
@@ -197,6 +230,25 @@ export function AgrochemicalForm({
                                     />
                                 </div>
                                 <div className="space-y-2">
+                                    <Label htmlFor="formulation_code">Formulación</Label>
+                                    <Select
+                                        value={formulationCode}
+                                        onValueChange={(value) => setValue('formulation_code', value)}
+                                        disabled={isLoadingFormulations}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Seleccionar formulación" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {formulationTypes?.map((formulation) => (
+                                                <SelectItem key={formulation.code} value={formulation.code}>
+                                                    {formulation.code} - {formulation.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
                                     <Label htmlFor="function">Función</Label>
                                     <Input
                                         id="function"
@@ -229,12 +281,24 @@ export function AgrochemicalForm({
                                             <SelectValue placeholder="Seleccionar clase" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="Ia">Ia - Extremadamente peligroso</SelectItem>
-                                            <SelectItem value="Ib">Ib - Altamente peligroso</SelectItem>
-                                            <SelectItem value="II">II - Moderadamente peligroso</SelectItem>
-                                            <SelectItem value="III">III - Ligeramente peligroso</SelectItem>
-                                            <SelectItem value="IV">IV - Improbable que presente riesgo</SelectItem>
-                                            <SelectItem value="U">U - Improbable presentar riesgo agudo</SelectItem>
+                                            <SelectItem value="Ia" className={getToxClassColor('Ia')}>
+                                                Ia - Extremadamente peligroso
+                                            </SelectItem>
+                                            <SelectItem value="Ib" className={getToxClassColor('Ib')}>
+                                                Ib - Altamente peligroso
+                                            </SelectItem>
+                                            <SelectItem value="II" className={getToxClassColor('II')}>
+                                                II - Moderadamente peligroso
+                                            </SelectItem>
+                                            <SelectItem value="III" className={getToxClassColor('III')}>
+                                                III - Ligeramente peligroso
+                                            </SelectItem>
+                                            <SelectItem value="IV" className={getToxClassColor('IV')}>
+                                                IV - Improbable que presente riesgo
+                                            </SelectItem>
+                                            <SelectItem value="U" className={getToxClassColor('U')}>
+                                                U - Improbable presentar riesgo agudo
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useClients } from '@/hooks/useClients';
-import { useFarms } from '@/hooks/useFarms';
+import { useClients, useCreateClient } from '@/hooks/useClients';
+import { useFarms, useCreateFarm } from '@/hooks/useFarms';
 import { useCreateJob } from '@/hooks/useJobs';
 import { useCreateAgrochemicalsBulk } from '@/hooks/useAgrochemicals';
 import { useAgrochemicalCatalog } from '@/hooks/useAgrochemicalCatalog';
@@ -20,6 +20,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Plus, Trash2, Loader2, GripVertical } from 'lucide-react';
 
 interface AgrochemicalEntry {
@@ -39,6 +47,8 @@ export default function JobCreate() {
   const { data: agrochemicalsCatalog, isLoading: agrochemicalsLoading } = useAgrochemicalCatalog();
   const createJob = useCreateJob();
   const createAgrochemicalsBulk = useCreateAgrochemicalsBulk();
+  const createClient = useCreateClient();
+  const createFarm = useCreateFarm();
 
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const { data: farms, isLoading: farmsLoading } = useFarms(selectedClientId || undefined);
@@ -63,11 +73,41 @@ export default function JobCreate() {
   const [agrochemicals, setAgrochemicals] = useState<AgrochemicalEntry[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Dialog states
+  const [showClientDialog, setShowClientDialog] = useState(false);
+  const [showFarmDialog, setShowFarmDialog] = useState(false);
+  const [newClientData, setNewClientData] = useState({ name: '', phone: '', cuit: '' });
+  const [newFarmData, setNewFarmData] = useState({ name: '', area_hectares: '', localidad: '', location: '' });
+
   useEffect(() => {
     if (selectedClientId) {
       setFormData(prev => ({ ...prev, client_id: selectedClientId, farm_id: '' }));
     }
   }, [selectedClientId]);
+
+  // Auto-populate title based on Client, Farm, and Date
+  useEffect(() => {
+    const client = clients?.find(c => c.id === formData.client_id);
+    const farm = farms?.find(f => f.id === formData.farm_id);
+
+    if (client && farm) {
+      const clientName = client.name;
+      const farmName = farm.name;
+      const date = formData.start_date
+        ? new Date(formData.start_date).toLocaleDateString('es-AR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        })
+        : '';
+
+      const autoTitle = date
+        ? `${clientName} - ${farmName} - ${date}`
+        : `${clientName} - ${farmName}`;
+
+      setFormData(prev => ({ ...prev, title: autoTitle }));
+    }
+  }, [formData.client_id, formData.farm_id, formData.start_date, clients, farms]);
 
   const addAgrochemical = () => {
     setAgrochemicals([
@@ -121,6 +161,58 @@ export default function JobCreate() {
 
   const removeAgrochemical = (id: string) => {
     setAgrochemicals(agrochemicals.filter(a => a.id !== id));
+  };
+
+  const handleCreateClient = async () => {
+    try {
+      const newClient = await createClient.mutateAsync({
+        name: newClientData.name,
+        phone: newClientData.phone || null,
+        cuit: newClientData.cuit || null,
+        razon_social: null,
+        contacto_principal: null,
+        puesto: null,
+        otro_contacto_1: null,
+        telefono_1: null,
+        otro_contacto_2: null,
+        telefono_2: null,
+        notes: null,
+      });
+
+      // Auto-select the newly created client
+      setSelectedClientId(newClient.id);
+      setFormData(prev => ({ ...prev, client_id: newClient.id }));
+
+      // Reset and close dialog
+      setNewClientData({ name: '', phone: '', cuit: '' });
+      setShowClientDialog(false);
+    } catch (error) {
+      console.error('Error creating client:', error);
+    }
+  };
+
+  const handleCreateFarm = async () => {
+    if (!selectedClientId) return;
+
+    try {
+      const newFarm = await createFarm.mutateAsync({
+        client_id: selectedClientId,
+        name: newFarmData.name,
+        area_hectares: newFarmData.area_hectares ? parseFloat(newFarmData.area_hectares) : null,
+        localidad: newFarmData.localidad || null,
+        location: newFarmData.location || null,
+        cultivo: null,
+      });
+
+      // Auto-select the newly created farm
+      setFormData(prev => ({ ...prev, farm_id: newFarm.id }));
+
+      // Reset and close dialog
+      setNewFarmData({ name: '', area_hectares: '', localidad: '', location: '' });
+      setShowFarmDialog(false);
+    } catch (error) {
+      console.error('Error creating farm:', error);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -201,7 +293,19 @@ export default function JobCreate() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="client">Cliente *</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="client">Cliente *</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowClientDialog(true)}
+                    className="h-auto py-1 text-xs"
+                  >
+                    <Plus className="mr-1 h-3 w-3" />
+                    Crear Cliente
+                  </Button>
+                </div>
                 <Select
                   value={selectedClientId}
                   onValueChange={setSelectedClientId}
@@ -221,7 +325,20 @@ export default function JobCreate() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="farm">Fincas *</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="farm">Fincas *</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowFarmDialog(true)}
+                    disabled={!selectedClientId}
+                    className="h-auto py-1 text-xs"
+                  >
+                    <Plus className="mr-1 h-3 w-3" />
+                    Crear Finca
+                  </Button>
+                </div>
                 <Select
                   value={formData.farm_id}
                   onValueChange={(v) => setFormData({ ...formData, farm_id: v })}
@@ -249,13 +366,55 @@ export default function JobCreate() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="task">Tarea</Label>
-                <Input
-                  id="task"
-                  value={formData.task}
-                  onChange={(e) => setFormData({ ...formData, task: e.target.value })}
-                  placeholder="Ej: Aplicación de herbicida"
-                />
+                <Label>Aplicación</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, task: 'Líquido' })}
+                    className={`flex flex-col items-center justify-center rounded-lg border-2 p-4 transition-all hover:border-primary/50 ${formData.task === 'Líquido'
+                        ? 'border-primary bg-primary/5 text-primary'
+                        : 'border-muted-foreground/20 hover:bg-accent'
+                      }`}
+                  >
+                    <svg
+                      className="mb-2 h-8 w-8"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 008 10.172V5L7 4z"
+                      />
+                    </svg>
+                    <span className="font-medium">Líquido</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, task: 'Sólido' })}
+                    className={`flex flex-col items-center justify-center rounded-lg border-2 p-4 transition-all hover:border-primary/50 ${formData.task === 'Sólido'
+                        ? 'border-primary bg-primary/5 text-primary'
+                        : 'border-muted-foreground/20 hover:bg-accent'
+                      }`}
+                  >
+                    <svg
+                      className="mb-2 h-8 w-8"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                      />
+                    </svg>
+                    <span className="font-medium">Sólido</span>
+                  </button>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="application_dose">Dosis de Caldo</Label>
@@ -524,6 +683,139 @@ export default function JobCreate() {
           </Button>
         </div>
       </form>
+
+      {/* Create Client Dialog */}
+      <Dialog open={showClientDialog} onOpenChange={setShowClientDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Crear Nuevo Cliente</DialogTitle>
+            <DialogDescription>
+              Agrega un nuevo cliente rápidamente
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-client-name">Nombre *</Label>
+              <Input
+                id="new-client-name"
+                value={newClientData.name}
+                onChange={(e) => setNewClientData({ ...newClientData, name: e.target.value })}
+                placeholder="Nombre del cliente"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-client-phone">Teléfono</Label>
+              <Input
+                id="new-client-phone"
+                value={newClientData.phone}
+                onChange={(e) => setNewClientData({ ...newClientData, phone: e.target.value })}
+                placeholder="+54 11 1234-5678"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-client-cuit">CUIT</Label>
+              <Input
+                id="new-client-cuit"
+                value={newClientData.cuit}
+                onChange={(e) => setNewClientData({ ...newClientData, cuit: e.target.value })}
+                placeholder="20-12345678-9"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowClientDialog(false);
+                setNewClientData({ name: '', phone: '', cuit: '' });
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={handleCreateClient}
+              disabled={!newClientData.name || createClient.isPending}
+            >
+              {createClient.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Crear
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Farm Dialog */}
+      <Dialog open={showFarmDialog} onOpenChange={setShowFarmDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Crear Nueva Finca</DialogTitle>
+            <DialogDescription>
+              Agrega una nueva finca para {clients?.find(c => c.id === selectedClientId)?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-farm-name">Nombre *</Label>
+              <Input
+                id="new-farm-name"
+                value={newFarmData.name}
+                onChange={(e) => setNewFarmData({ ...newFarmData, name: e.target.value })}
+                placeholder="Nombre de la finca"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-farm-area">Superficie (hectáreas)</Label>
+              <Input
+                id="new-farm-area"
+                type="number"
+                step="0.01"
+                value={newFarmData.area_hectares}
+                onChange={(e) => setNewFarmData({ ...newFarmData, area_hectares: e.target.value })}
+                placeholder="100.5"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-farm-location">Localidad</Label>
+              <Input
+                id="new-farm-location"
+                value={newFarmData.localidad}
+                onChange={(e) => setNewFarmData({ ...newFarmData, localidad: e.target.value })}
+                placeholder="Ciudad o localidad"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-farm-gps">Coordenadas GPS</Label>
+              <Input
+                id="new-farm-gps"
+                value={newFarmData.location}
+                onChange={(e) => setNewFarmData({ ...newFarmData, location: e.target.value })}
+                placeholder="-34.123, -58.456"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowFarmDialog(false);
+                setNewFarmData({ name: '', area_hectares: '', localidad: '', location: '' });
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={handleCreateFarm}
+              disabled={!newFarmData.name || createFarm.isPending}
+            >
+              {createFarm.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Crear
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

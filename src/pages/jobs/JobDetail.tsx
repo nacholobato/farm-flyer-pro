@@ -485,7 +485,7 @@ export default function JobDetail() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="pending">Pendiente</SelectItem>
-                      <SelectItem value="in_progress">En Progreso</SelectItem>
+                      <SelectItem value="in_progress">En Curso</SelectItem>
                       <SelectItem value="done">Completado</SelectItem>
                     </SelectContent>
                   </Select>

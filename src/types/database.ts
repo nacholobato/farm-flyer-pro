@@ -146,5 +146,85 @@ export interface Agrochemical {
   label_url: string | null;
   standard_dose: number | null;
   unit: string;
+  formulation_code: string | null;
   organization_id: string;
+  // Joined data
+  formulation?: FormulationType;
+}
+
+export interface FormulationType {
+  code: string;
+  name: string;
+  description: string | null;
+  physical_state: string | null;
+}
+
+// Operational Attendance System Types
+export type StaffRole = 'pilot' | 'assistant';
+export type ActivityType = 'spraying' | 'mapping' | 'scouting';
+
+export interface WorkTeam {
+  id: string;
+  organization_id: string;
+  full_name: string;
+  role: StaffRole;
+  phone: string | null;
+  email: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Drone {
+  id: string;
+  organization_id: string;
+  model: string;
+  serial_number: string | null;
+  total_hours: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Generator {
+  id: string;
+  organization_id: string;
+  brand: string;
+  internal_code: string | null;
+  total_hours: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OperationalAttendance {
+  id: string;
+  organization_id: string;
+  job_id: string;
+  start_date: string;
+  check_in_time: string | null;
+  check_out_time: string | null;
+  activity_type: ActivityType | null;
+  pilot_id: string | null;
+  assistant_id: string | null;
+  drone_id: string | null;
+  generator_id: string | null;
+  gen_usage_hours: number | null;
+  hectares_done: number | null;
+  agronomic_obs: string | null;
+  technical_obs: string | null;
+  is_reviewed: boolean;
+  created_at: string;
+  updated_at: string;
+  // Joined data
+  pilot?: WorkTeam;
+  assistant?: WorkTeam;
+  drone?: Drone;
+  generator?: Generator;
+  job?: Job;
+}
+
+export interface HectaresSummary {
+  total_hectares_done: number;
+  job_theoretical_hectares: number | null;
+  job_applied_hectares: number | null;
+  exceeds_theoretical: boolean;
+  exceeds_applied: boolean;
 }
