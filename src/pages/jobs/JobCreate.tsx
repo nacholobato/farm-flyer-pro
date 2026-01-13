@@ -30,6 +30,19 @@ import {
 } from '@/components/ui/dialog';
 import { Plus, Trash2, Loader2, GripVertical } from 'lucide-react';
 
+// Fallback UUID generator for browsers that don't support crypto.randomUUID()
+const generateUUID = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback for older browsers/mobile
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
+
 interface AgrochemicalEntry {
   id: string;
   agrochemical_id: string | null;
@@ -113,7 +126,7 @@ export default function JobCreate() {
     setAgrochemicals([
       ...agrochemicals,
       {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         agrochemical_id: null,
         product_name: '',
         dose: '',
@@ -372,8 +385,8 @@ export default function JobCreate() {
                     type="button"
                     onClick={() => setFormData({ ...formData, task: 'Líquido' })}
                     className={`flex flex-col items-center justify-center rounded-lg border-2 p-4 transition-all hover:border-primary/50 ${formData.task === 'Líquido'
-                        ? 'border-primary bg-primary/5 text-primary'
-                        : 'border-muted-foreground/20 hover:bg-accent'
+                      ? 'border-primary bg-primary/5 text-primary'
+                      : 'border-muted-foreground/20 hover:bg-accent'
                       }`}
                   >
                     <svg
@@ -395,8 +408,8 @@ export default function JobCreate() {
                     type="button"
                     onClick={() => setFormData({ ...formData, task: 'Sólido' })}
                     className={`flex flex-col items-center justify-center rounded-lg border-2 p-4 transition-all hover:border-primary/50 ${formData.task === 'Sólido'
-                        ? 'border-primary bg-primary/5 text-primary'
-                        : 'border-muted-foreground/20 hover:bg-accent'
+                      ? 'border-primary bg-primary/5 text-primary'
+                      : 'border-muted-foreground/20 hover:bg-accent'
                       }`}
                   >
                     <svg

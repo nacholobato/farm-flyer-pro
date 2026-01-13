@@ -41,6 +41,8 @@ import { Edit, Trash2, Plus, Loader2, Calendar, MapPin, Users, Beaker } from 'lu
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
+import { JobCalculator } from '@/components/jobs/JobCalculator';
+
 
 export default function JobDetail() {
   const { id } = useParams<{ id: string }>();
@@ -419,6 +421,13 @@ export default function JobDetail() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Calculator Section */}
+      <JobCalculator
+        agrochemicals={agrochemicals || []}
+        hectares={job.superficie_aplicada_has}
+        doseCaldo={parseFloat(job.application_dose || '0')}
+      />
 
       {/* Edit Job Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
