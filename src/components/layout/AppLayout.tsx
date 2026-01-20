@@ -44,7 +44,6 @@ const navItems: NavItem[] = [
   },
   { href: '/operations/attendance', label: 'Asistencia', icon: ClipboardList },
   { href: '/resources', label: 'Recursos', icon: BookOpen },
-  { href: '/tools/calculator', label: 'Calculadora', icon: Calculator },
   { href: '/catalog', label: 'Catálogo', icon: FlaskConical },
   { href: '/profile', label: 'Perfil', icon: User },
 ];

@@ -20,7 +20,6 @@ import JobCreate from "@/pages/jobs/JobCreate";
 import JobDetail from "@/pages/jobs/JobDetail";
 import ProfilePage from "@/pages/Profile";
 import Resources from "@/pages/Resources";
-import CalculatorPage from "@/pages/tools/CalculatorPage";
 import AgrochemicalsCatalog from "@/pages/catalog/AgrochemicalsCatalog";
 import WorkTeamList from "@/pages/operations/WorkTeamList";
 import DronesList from "@/pages/operations/DronesList";
@@ -97,7 +96,6 @@ function AppRoutes() {
 
       <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
 
-      <Route path="/tools/calculator" element={<ProtectedRoute><CalculatorPage /></ProtectedRoute>} />
       <Route path="/catalog" element={<ProtectedRoute><AgrochemicalsCatalog /></ProtectedRoute>} />
 
       <Route path="/operations/team" element={<ProtectedRoute><WorkTeamList /></ProtectedRoute>} />

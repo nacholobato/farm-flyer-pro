@@ -69,6 +69,7 @@ export default function JobDetail() {
     description: '',
     task: '',
     application_dose: '',
+    dose_caldo: '10',
     start_date: '',
     due_date: '',
     status: 'pending' as JobStatus,
@@ -103,6 +104,7 @@ export default function JobDetail() {
       description: job.description || '',
       task: job.task || '',
       application_dose: job.application_dose || '',
+      dose_caldo: job.dose_caldo?.toString() || '10',
       start_date: job.start_date || '',
       due_date: job.due_date || '',
       status: job.status,
@@ -119,6 +121,7 @@ export default function JobDetail() {
       description: editData.description || null,
       task: editData.task || null,
       application_dose: editData.application_dose || null,
+      dose_caldo: editData.dose_caldo ? parseFloat(editData.dose_caldo) : null,
       start_date: editData.start_date || null,
       due_date: editData.due_date || null,
       notes: editData.notes || null,
@@ -426,7 +429,14 @@ export default function JobDetail() {
       <JobCalculator
         agrochemicals={agrochemicals || []}
         hectares={job.superficie_aplicada_has}
-        doseCaldo={parseFloat(job.application_dose || '0')}
+        doseCaldo={job.dose_caldo}
+        totalJobHectares={job.superficie_teorica_has}
+        onHectaresChange={async (hectares) => {
+          await updateJob.mutateAsync({ id: job.id, superficie_aplicada_has: hectares });
+        }}
+        onDoseCaldoChange={async (doseCaldo) => {
+          await updateJob.mutateAsync({ id: job.id, dose_caldo: doseCaldo });
+        }}
       />
 
       {/* Edit Job Dialog */}
@@ -446,7 +456,7 @@ export default function JobDetail() {
                   required
                 />
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
                   <Label htmlFor="editTask">Tarea</Label>
                   <Input
@@ -461,6 +471,17 @@ export default function JobDetail() {
                     id="editDose"
                     value={editData.application_dose}
                     onChange={(e) => setEditData({ ...editData, application_dose: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editDoseCaldo">Dosis de Caldo (L/ha)</Label>
+                  <Input
+                    id="editDoseCaldo"
+                    type="number"
+                    step="0.1"
+                    value={editData.dose_caldo}
+                    onChange={(e) => setEditData({ ...editData, dose_caldo: e.target.value })}
+                    placeholder="10"
                   />
                 </div>
               </div>

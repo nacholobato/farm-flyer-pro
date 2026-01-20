@@ -9,6 +9,7 @@ interface JobCalculatorProps {
     agrochemicals: AgrochemicalUsed[];
     hectares?: number | null;
     doseCaldo?: number | null;
+    totalJobHectares?: number | null;
     onHectaresChange?: (hectares: number) => void;
     onDoseCaldoChange?: (dose: number) => void;
 }
@@ -17,6 +18,7 @@ export function JobCalculator({
     agrochemicals,
     hectares: initialHectares,
     doseCaldo: initialDoseCaldo,
+    totalJobHectares,
     onHectaresChange,
     onDoseCaldoChange
 }: JobCalculatorProps) {
@@ -84,7 +86,14 @@ export function JobCalculator({
                 amount = agro.dose * hectares;
             } else {
                 // Absolute amount (not per hectare)
-                amount = agro.dose;
+                // Calculate proportionally based on job's total surface
+                if (totalJobHectares && totalJobHectares > 0) {
+                    // Proportional: (dose * hectares_calculating) / total_job_hectares
+                    amount = (agro.dose * hectares) / totalJobHectares;
+                } else {
+                    // No total surface available, use dose as-is
+                    amount = agro.dose;
+                }
             }
 
             return {

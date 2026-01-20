@@ -59,6 +59,7 @@ export interface Job {
   description: string | null;
   task: string | null;
   application_dose: string | null;
+  dose_caldo: number | null;
   cuadro: string | null;
   cultivo: string | null;
   superficie_teorica_has: number | null;
