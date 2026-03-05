@@ -28,7 +28,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Plus, Trash2, Loader2, GripVertical } from 'lucide-react';
+import { Plus, Trash2, Loader2, GripVertical, Check, ChevronsUpDown } from 'lucide-react';
+import { useCultivos, useAddCultivo } from '@/hooks/useCultivos';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
+import { cn } from '@/lib/utils';
 
 // Fallback UUID generator for browsers that don't support crypto.randomUUID()
 const generateUUID = () => {
@@ -49,8 +53,9 @@ interface AgrochemicalEntry {
   product_name: string;
   dose: string;
   unit: string;
-  cost_per_unit: string;
   notes: string;
+  safety_precautions: string | null;
+  category: string | null;
   manualEntry: boolean;
 }
 
@@ -85,6 +90,13 @@ export default function JobCreate() {
 
   const [agrochemicals, setAgrochemicals] = useState<AgrochemicalEntry[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [jobPhoto, setJobPhoto] = useState<File | null>(null);
+
+  // Cultivos Combobox States
+  const { data: cultivos, isLoading: cultivosLoading } = useCultivos();
+  const addCultivoMutation = useAddCultivo();
+  const [openCultivo, setOpenCultivo] = useState(false);
+  const [searchCultivo, setSearchCultivo] = useState('');
 
   // Dialog states
   const [showClientDialog, setShowClientDialog] = useState(false);
@@ -101,26 +113,24 @@ export default function JobCreate() {
   // Auto-populate title based on Client, Farm, and Date
   useEffect(() => {
     const client = clients?.find(c => c.id === formData.client_id);
-    const farm = farms?.find(f => f.id === formData.farm_id);
 
-    if (client && farm) {
+    if (client) {
       const clientName = client.name;
-      const farmName = farm.name;
+      const cultivo = formData.cultivo || 'Sin Cultivo';
+      const hectareas = formData.superficie_teorica_has ? `${formData.superficie_teorica_has}ha` : '0ha';
       const date = formData.start_date
-        ? new Date(formData.start_date).toLocaleDateString('es-AR', {
+        ? new Date(`${formData.start_date}T12:00:00`).toLocaleDateString('es-AR', {
           day: '2-digit',
           month: '2-digit',
           year: 'numeric'
         })
-        : '';
+        : 'Sin Fecha';
 
-      const autoTitle = date
-        ? `${clientName} - ${farmName} - ${date}`
-        : `${clientName} - ${farmName}`;
+      const autoTitle = `${clientName} - ${cultivo} - ${hectareas} - ${date}`;
 
       setFormData(prev => ({ ...prev, title: autoTitle }));
     }
-  }, [formData.client_id, formData.farm_id, formData.start_date, clients, farms]);
+  }, [formData.client_id, formData.cultivo, formData.superficie_teorica_has, formData.start_date, clients]);
 
   const addAgrochemical = () => {
     setAgrochemicals([
@@ -131,8 +141,9 @@ export default function JobCreate() {
         product_name: '',
         dose: '',
         unit: 'L/ha',
-        cost_per_unit: '',
         notes: '',
+        safety_precautions: null,
+        category: null,
         manualEntry: false
       }
     ]);
@@ -152,7 +163,9 @@ export default function JobCreate() {
         agrochemical_id: null,
         product_name: '',
         dose: '',
-        unit: 'L/ha'
+        unit: 'L/ha',
+        safety_precautions: null,
+        category: null
       } : a
     ));
   };
@@ -166,7 +179,9 @@ export default function JobCreate() {
           agrochemical_id: agrochemicalId,
           product_name: agrochemical.name,
           unit: agrochemical.unit,
-          dose: agrochemical.standard_dose ? agrochemical.standard_dose.toString() : ''
+          dose: agrochemical.standard_dose ? agrochemical.standard_dose.toString() : '',
+          safety_precautions: (agrochemical as any).safety_precautions || null,
+          category: (agrochemical as any).category || null
         } : a
       ));
     }
@@ -235,17 +250,20 @@ export default function JobCreate() {
     try {
       // Step 1: Create the job
       const job = await createJob.mutateAsync({
-        ...formData,
-        start_date: formData.start_date || null,
-        due_date: formData.due_date || null,
-        description: formData.description || null,
-        task: formData.task || null,
-        application_dose: formData.application_dose || null,
-        cuadro: formData.cuadro || null,
-        cultivo: formData.cultivo || null,
-        superficie_teorica_has: formData.superficie_teorica_has ? parseFloat(formData.superficie_teorica_has) : null,
-        superficie_aplicada_has: formData.superficie_aplicada_has ? parseFloat(formData.superficie_aplicada_has) : null,
-        notes: formData.notes || null,
+        job: {
+          ...formData,
+          start_date: formData.start_date || null,
+          due_date: formData.due_date || null,
+          description: formData.description || null,
+          task: formData.task || null,
+          application_dose: formData.application_dose || null,
+          cuadro: formData.cuadro || null,
+          cultivo: formData.cultivo || null,
+          superficie_teorica_has: formData.superficie_teorica_has ? parseFloat(formData.superficie_teorica_has) : null,
+          superficie_aplicada_has: null,
+          image_url: null,
+          notes: formData.notes || null,
+        }, file: jobPhoto
       });
 
       // Step 2: Prepare agrochemicals for bulk insert
@@ -257,7 +275,7 @@ export default function JobCreate() {
           product_name: agro.product_name,
           dose: parseFloat(agro.dose),
           unit: agro.unit,
-          cost_per_unit: agro.cost_per_unit ? parseFloat(agro.cost_per_unit) : null,
+          cost_per_unit: null,
           application_order: index + 1,
           notes: agro.notes || null,
         }));
@@ -293,19 +311,8 @@ export default function JobCreate() {
             <CardDescription>Datos generales del trabajo</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Título *</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="Ej: Fumigación de soja - Lote 5"
-                required
-              />
-            </div>
-
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
+              <div className="space-y-2 flex flex-col pt-1">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="client">Cliente *</Label>
                   <Button
@@ -450,50 +457,91 @@ export default function JobCreate() {
                   placeholder="Identificación del cuadro"
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 flex flex-col pt-1">
                 <Label htmlFor="cultivo">Cultivo</Label>
-                <Input
-                  id="cultivo"
-                  value={formData.cultivo}
-                  onChange={(e) => setFormData({ ...formData, cultivo: e.target.value })}
-                  placeholder="Tipo de cultivo"
-                />
+                <Popover open={openCultivo} onOpenChange={setOpenCultivo}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openCultivo}
+                      className="justify-between w-full font-normal"
+                      disabled={cultivosLoading}
+                    >
+                      {formData.cultivo
+                        ? cultivos?.find((c) => c.name === formData.cultivo)?.name || formData.cultivo
+                        : "Seleccionar cultivo..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <Command>
+                      <CommandInput
+                        placeholder="Buscar cultivo..."
+                        value={searchCultivo}
+                        onValueChange={setSearchCultivo}
+                      />
+                      <CommandList>
+                        <CommandEmpty className="py-2 text-center text-sm flex flex-col items-center">
+                          {searchCultivo ? (
+                            <Button
+                              variant="ghost"
+                              className="w-full justify-start font-normal text-primary hover:text-primary"
+                              onClick={async () => {
+                                try {
+                                  const newCultivo = await addCultivoMutation.mutateAsync(searchCultivo);
+                                  setFormData({ ...formData, cultivo: newCultivo.name });
+                                  setSearchCultivo("");
+                                  setOpenCultivo(false);
+                                } catch (error) {
+                                  console.error("Failed to add cultivo", error);
+                                }
+                              }}
+                              disabled={addCultivoMutation.isPending}
+                            >
+                              <Plus className="mr-2 h-4 w-4" />
+                              Agregar "{searchCultivo}"
+                            </Button>
+                          ) : (
+                            "No se encontró cultivo."
+                          )}
+                        </CommandEmpty>
+                        <CommandGroup>
+                          {cultivos?.map((cultivo) => (
+                            <CommandItem
+                              key={cultivo.id}
+                              value={cultivo.name}
+                              onSelect={() => {
+                                setFormData({ ...formData, cultivo: cultivo.name });
+                                setOpenCultivo(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  formData.cultivo === cultivo.name ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {cultivo.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="superficie_teorica">Superficie Teórica (has)</Label>
-                <Input
-                  id="superficie_teorica"
-                  type="number"
-                  step="0.01"
-                  value={formData.superficie_teorica_has}
-                  onChange={(e) => setFormData({ ...formData, superficie_teorica_has: e.target.value })}
-                  placeholder="100.5"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="superficie_aplicada">Superficie Aplicada (has)</Label>
-                <Input
-                  id="superficie_aplicada"
-                  type="number"
-                  step="0.01"
-                  value={formData.superficie_aplicada_has}
-                  onChange={(e) => setFormData({ ...formData, superficie_aplicada_has: e.target.value })}
-                  placeholder="98.2"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Descripción</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Detalles del trabajo..."
-                rows={3}
+            <div className="space-y-2 flex flex-col pt-1">
+              <Label htmlFor="superficie_teorica">Superficie Teórica (has)</Label>
+              <Input
+                id="superficie_teorica"
+                type="number"
+                step="0.01"
+                value={formData.superficie_teorica_has}
+                onChange={(e) => setFormData({ ...formData, superficie_teorica_has: e.target.value })}
+                placeholder="100.5"
               />
             </div>
           </CardContent>
@@ -592,7 +640,7 @@ export default function JobCreate() {
                               <SelectContent>
                                 {agrochemicalsCatalog?.map((agrochemical) => (
                                   <SelectItem key={agrochemical.id} value={agrochemical.id}>
-                                    {agrochemical.name} ({agrochemical.unit})
+                                    {agrochemical.name} - {agrochemical.manufacturer || 'Sin fabricante'}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -607,18 +655,34 @@ export default function JobCreate() {
                           >
                             {agro.manualEntry ? "← Seleccionar de catálogo" : "O ingresar manualmente →"}
                           </Button>
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Costo por Unidad (opcional)</Label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            value={agro.cost_per_unit}
-                            onChange={(e) => updateAgrochemical(agro.id, 'cost_per_unit', e.target.value)}
-                            placeholder="0.00"
-                          />
+                          {!agro.manualEntry && agro.safety_precautions && (
+                            <div className="mt-1 rounded border border-amber-200 bg-amber-50 p-2 text-[10px] text-amber-800 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-200">
+                              <span className="font-semibold">Precauciones:</span> {agro.safety_precautions}
+                            </div>
+                          )}
                         </div>
                       </div>
+
+                      {/* Info Row: Category & Safety */}
+                      {(!agro.manualEntry && (agro.category || agro.safety_precautions)) && (
+                        <div className="rounded-md bg-muted/50 p-3 text-xs space-y-2">
+                          {agro.category && (
+                            <p>
+                              <span className="font-semibold">Categoría:</span> {agro.category}
+                            </p>
+                          )}
+                          {agro.safety_precautions && (
+                            <p>
+                              <span className="font-semibold flex items-center gap-1">
+                                Precauciones de Seguridad:
+                              </span>
+                              <span className="text-muted-foreground whitespace-pre-wrap block mt-1">
+                                {agro.safety_precautions}
+                              </span>
+                            </p>
+                          )}
+                        </div>
+                      )}
 
                       {/* Dose and Unit Row */}
                       <div className="grid gap-3 sm:grid-cols-2">
@@ -646,9 +710,12 @@ export default function JobCreate() {
                               <SelectItem value="L/ha">L/ha</SelectItem>
                               <SelectItem value="kg/ha">kg/ha</SelectItem>
                               <SelectItem value="mL/ha">mL/ha</SelectItem>
+                              <SelectItem value="cc/ha">cc/ha</SelectItem>
                               <SelectItem value="g/ha">g/ha</SelectItem>
                               <SelectItem value="L">L</SelectItem>
                               <SelectItem value="kg">kg</SelectItem>
+                              <SelectItem value="cc">cc</SelectItem>
+                              <SelectItem value="g">g</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -682,6 +749,55 @@ export default function JobCreate() {
               placeholder="Notas adicionales sobre el trabajo..."
               rows={4}
             />
+          </CardContent>
+        </Card>
+
+        {/* Resumen Final */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Resumen del Trabajo</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Título del Trabajo *</Label>
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="Ej: Cliente - Cultivo - Hectáreas - Fecha"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Descripción</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Detalles adicionales del trabajo..."
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="job-photo">Foto del Trabajo (Opcional)</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="job-photo"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/heic"
+                  onChange={(e) => setJobPhoto(e.target.files?.[0] || null)}
+                  className="cursor-pointer"
+                />
+                {jobPhoto && (
+                  <span className="text-xs text-muted-foreground truncate max-w-[150px]">
+                    {jobPhoto.name}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Formatos aceptados: JPG, PNG, WEBP.
+              </p>
+            </div>
           </CardContent>
         </Card>
 

@@ -67,6 +67,7 @@ export interface Job {
   start_date: string | null;
   due_date: string | null;
   status: JobStatus;
+  image_url: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -78,12 +79,10 @@ export interface Job {
 export interface AgrochemicalUsed {
   id: string;
   job_id: string;
-  product_id: string | null;
   product_name: string;
   dose: number;
   unit: string;
   application_order: number;
-  cost_per_unit: number | null;
   notes: string | null;
   created_at: string;
 }
@@ -120,18 +119,7 @@ export interface Resource {
   updated_at: string;
 }
 
-export interface AgrochemicalUsed {
-  id: string;
-  job_id: string;
-  agrochemical_id: string | null;
-  product_name: string;
-  dose: number;
-  unit: string;
-  application_order: number;
-  cost_per_unit: number | null;
-  notes: string | null;
-  created_at: string;
-}
+
 
 export interface Agrochemical {
   id: string;

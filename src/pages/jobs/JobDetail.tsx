@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useJob, useUpdateJob, useDeleteJob } from '@/hooks/useJobs';
+import { useJob, useUpdateJob, useDeleteJob, useJobPhotoUrl } from '@/hooks/useJobs';
 import { useAgrochemicals, useCreateAgrochemical, useUpdateAgrochemical, useDeleteAgrochemical } from '@/hooks/useAgrochemicals';
 import { useAgrochemicalCatalog } from '@/hooks/useAgrochemicalCatalog';
 import { JobStatus } from '@/types/database';
@@ -37,10 +37,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Edit, Trash2, Plus, Loader2, Calendar, MapPin, Users, Beaker } from 'lucide-react';
+import { Edit, Trash2, Plus, Loader2, Calendar, MapPin, Users, Beaker, Image as ImageIcon, FileDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
+import { generateJobPdf } from '@/components/jobs/JobPdfReport';
 import { JobCalculator } from '@/components/jobs/JobCalculator';
 
 
@@ -51,6 +52,9 @@ export default function JobDetail() {
   const { data: job, isLoading: jobLoading } = useJob(id);
   const { data: agrochemicals, isLoading: agroLoading } = useAgrochemicals(id);
   const { data: catalogProducts } = useAgrochemicalCatalog();
+  const { data: photoUrl, isLoading: photoLoading } = useJobPhotoUrl(job?.image_url);
+
+  const isDone = job?.status === 'done';
 
   const updateJob = useUpdateJob();
   const deleteJob = useDeleteJob();
@@ -69,7 +73,9 @@ export default function JobDetail() {
     description: '',
     task: '',
     application_dose: '',
-    dose_caldo: '10',
+    cuadro: '',
+    cultivo: '',
+    superficie_teorica_has: '',
     start_date: '',
     due_date: '',
     status: 'pending' as JobStatus,
@@ -81,8 +87,8 @@ export default function JobDetail() {
     product_name: '',
     dose: '',
     unit: 'L/ha',
-    cost_per_unit: '',
     notes: '',
+    category: '',
   });
 
   if (jobLoading || agroLoading) return <LoadingPage />;
@@ -104,7 +110,9 @@ export default function JobDetail() {
       description: job.description || '',
       task: job.task || '',
       application_dose: job.application_dose || '',
-      dose_caldo: job.dose_caldo?.toString() || '10',
+      cuadro: job.cuadro || '',
+      cultivo: job.cultivo || '',
+      superficie_teorica_has: job.superficie_teorica_has?.toString() || '',
       start_date: job.start_date || '',
       due_date: job.due_date || '',
       status: job.status,
@@ -121,7 +129,9 @@ export default function JobDetail() {
       description: editData.description || null,
       task: editData.task || null,
       application_dose: editData.application_dose || null,
-      dose_caldo: editData.dose_caldo ? parseFloat(editData.dose_caldo) : null,
+      cuadro: editData.cuadro || null,
+      cultivo: editData.cultivo || null,
+      superficie_teorica_has: editData.superficie_teorica_has ? parseFloat(editData.superficie_teorica_has) : null,
       start_date: editData.start_date || null,
       due_date: editData.due_date || null,
       notes: editData.notes || null,
@@ -143,17 +153,17 @@ export default function JobDetail() {
       const agro = agrochemicals?.find(a => a.id === agroId);
       if (agro) {
         setAgroData({
-          catalog_id: agro.agrochemical_id || '',
+          catalog_id: '',
           product_name: agro.product_name,
           dose: agro.dose.toString(),
           unit: agro.unit,
-          cost_per_unit: agro.cost_per_unit?.toString() || '',
           notes: agro.notes || '',
+          category: '',
         });
         setEditAgroId(agroId);
       }
     } else {
-      setAgroData({ catalog_id: '', product_name: '', dose: '', unit: 'L/ha', cost_per_unit: '', notes: '' });
+      setAgroData({ catalog_id: '', product_name: '', dose: '', unit: 'L/ha', notes: '', category: '' });
       setEditAgroId(null);
     }
     setAgroDialogOpen(true);
@@ -166,8 +176,8 @@ export default function JobDetail() {
         product_name: '',
         dose: '',
         unit: 'L/ha',
-        cost_per_unit: '',
-        notes: ''
+        notes: '',
+        category: ''
       });
     } else {
       const product = catalogProducts?.find(p => p.id === catalogId);
@@ -175,10 +185,10 @@ export default function JobDetail() {
         setAgroData({
           catalog_id: catalogId,
           product_name: product.name,
-          dose: product.recommended_dose?.toString() || '',
+          dose: product.standard_dose?.toString() || '',
           unit: product.unit || 'L/ha',
-          cost_per_unit: product.cost_per_unit?.toString() || '',
           notes: '',
+          category: product.category || ''
         });
       }
     }
@@ -190,22 +200,18 @@ export default function JobDetail() {
       await updateAgrochemical.mutateAsync({
         id: editAgroId,
         job_id: job.id,
-        agrochemical_id: agroData.catalog_id || null,
         product_name: agroData.product_name,
         dose: parseFloat(agroData.dose),
         unit: agroData.unit,
-        cost_per_unit: agroData.cost_per_unit ? parseFloat(agroData.cost_per_unit) : null,
         application_order: 1, // Will be preserved from existing record
         notes: agroData.notes || null,
       });
     } else {
       await createAgrochemical.mutateAsync({
         job_id: job.id,
-        agrochemical_id: agroData.catalog_id || null,
         product_name: agroData.product_name,
         dose: parseFloat(agroData.dose),
         unit: agroData.unit,
-        cost_per_unit: agroData.cost_per_unit ? parseFloat(agroData.cost_per_unit) : null,
         application_order: (agrochemicals?.length || 0) + 1,
         notes: agroData.notes || null,
       });
@@ -237,11 +243,25 @@ export default function JobDetail() {
                 <SelectItem value="done">Completado</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" onClick={openEditDialog}>
+            <Button variant="outline" onClick={openEditDialog} disabled={isDone}>
               <Edit className="mr-2 h-4 w-4" />
               Editar
             </Button>
-            <Button variant="destructive" onClick={() => setDeleteDialogOpen(true)}>
+            {isDone && (
+              <Button
+                variant="default"
+                onClick={() => generateJobPdf({
+                  job,
+                  agrochemicals: agrochemicals || [],
+                  clientName: job.client?.name,
+                  farmName: job.farm?.name,
+                })}
+              >
+                <FileDown className="mr-2 h-4 w-4" />
+                Descargar PDF
+              </Button>
+            )}
+            <Button variant="destructive" onClick={() => setDeleteDialogOpen(true)} disabled={isDone}>
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
@@ -345,6 +365,33 @@ export default function JobDetail() {
           </CardContent>
         </Card>
 
+        {/* Photo Display Card */}
+        {job.image_url && (
+          <Card className="lg:col-span-1 border-dashed">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                Foto del Trabajo
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {photoLoading ? (
+                <div className="flex justify-center py-6">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : photoUrl ? (
+                <div className="overflow-hidden rounded-md border">
+                  <img src={photoUrl} alt="Foto del trabajo" className="w-full h-auto object-cover" />
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No se pudo cargar la imagen
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Agrochemicals */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
@@ -355,7 +402,7 @@ export default function JobDetail() {
               </CardTitle>
               <CardDescription>{agrochemicals?.length || 0} productos</CardDescription>
             </div>
-            <Button size="sm" onClick={() => openAgroDialog()}>
+            <Button size="sm" onClick={() => openAgroDialog()} disabled={isDone}>
               <Plus className="h-4 w-4" />
             </Button>
           </CardHeader>
@@ -378,7 +425,7 @@ export default function JobDetail() {
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="font-medium text-sm">{agro.product_name}</p>
-                          {agro.agrochemical_id ? (
+                          {catalogProducts?.some(p => p.name === agro.product_name) ? (
                             <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
                               Catálogo
                             </span>
@@ -390,12 +437,6 @@ export default function JobDetail() {
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <span>{agro.dose} {agro.unit}</span>
-                          {agro.cost_per_unit && (
-                            <>
-                              <span>•</span>
-                              <span>${agro.cost_per_unit.toFixed(2)}/{agro.unit}</span>
-                            </>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -405,6 +446,7 @@ export default function JobDetail() {
                         size="icon"
                         className="h-7 w-7"
                         onClick={() => openAgroDialog(agro.id)}
+                        disabled={isDone}
                       >
                         <Edit className="h-3.5 w-3.5" />
                       </Button>
@@ -413,6 +455,7 @@ export default function JobDetail() {
                         size="icon"
                         className="h-7 w-7 text-muted-foreground hover:text-destructive"
                         onClick={() => setDeleteAgroId(agro.id)}
+                        disabled={isDone}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
@@ -426,18 +469,17 @@ export default function JobDetail() {
       </div>
 
       {/* Calculator Section */}
-      <JobCalculator
-        agrochemicals={agrochemicals || []}
-        hectares={job.superficie_aplicada_has}
-        doseCaldo={job.dose_caldo}
-        totalJobHectares={job.superficie_teorica_has}
-        onHectaresChange={async (hectares) => {
-          await updateJob.mutateAsync({ id: job.id, superficie_aplicada_has: hectares });
-        }}
-        onDoseCaldoChange={async (doseCaldo) => {
-          await updateJob.mutateAsync({ id: job.id, dose_caldo: doseCaldo });
-        }}
-      />
+      {!isDone && (
+        <JobCalculator
+          agrochemicals={agrochemicals || []}
+          hectares={job.superficie_aplicada_has}
+          totalJobHectares={job.superficie_teorica_has}
+          onHectaresChange={async (hectares) => {
+            await updateJob.mutateAsync({ id: job.id, superficie_aplicada_has: hectares });
+          }}
+          catalogProducts={catalogProducts || []}
+        />
+      )}
 
       {/* Edit Job Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
@@ -474,14 +516,31 @@ export default function JobDetail() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="editDoseCaldo">Dosis de Caldo (L/ha)</Label>
+                  <Label htmlFor="editCuadro">Cuadro</Label>
                   <Input
-                    id="editDoseCaldo"
+                    id="editCuadro"
+                    value={editData.cuadro}
+                    onChange={(e) => setEditData({ ...editData, cuadro: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="editCultivo">Cultivo</Label>
+                  <Input
+                    id="editCultivo"
+                    value={editData.cultivo}
+                    onChange={(e) => setEditData({ ...editData, cultivo: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editSuperficie">Superficie Teórica (has)</Label>
+                  <Input
+                    id="editSuperficie"
                     type="number"
-                    step="0.1"
-                    value={editData.dose_caldo}
-                    onChange={(e) => setEditData({ ...editData, dose_caldo: e.target.value })}
-                    placeholder="10"
+                    step="0.01"
+                    value={editData.superficie_teorica_has}
+                    onChange={(e) => setEditData({ ...editData, superficie_teorica_has: e.target.value })}
                   />
                 </div>
               </div>
@@ -574,12 +633,20 @@ export default function JobDetail() {
                     <SelectItem value="manual">✏️ Entrada Manual</SelectItem>
                     {catalogProducts?.map((product) => (
                       <SelectItem key={product.id} value={product.id}>
-                        {product.name} - {product.category}
+                        {product.name} - {product.manufacturer || 'Sin fabricante'}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+
+              {agroData.category && (
+                <div className="rounded-md bg-muted/50 p-3 text-xs flex flex-col gap-1">
+                  <span className="font-semibold">Categoría:</span>
+                  <span>{agroData.category}</span>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="agroProduct">Producto *</Label>
                 <Input
@@ -623,17 +690,6 @@ export default function JobDetail() {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="agroCost">Costo por Unidad</Label>
-                <Input
-                  id="agroCost"
-                  type="number"
-                  step="0.01"
-                  value={agroData.cost_per_unit}
-                  onChange={(e) => setAgroData({ ...agroData, cost_per_unit: e.target.value })}
-                  placeholder="0.00"
-                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="agroNotes">Notas</Label>

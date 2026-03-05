@@ -21,13 +21,34 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Check, ChevronsUpDown } from 'lucide-react';
 import { Agrochemical } from '@/types/database';
 import {
     useCreateAgrochemicalProduct,
     useUpdateAgrochemicalProduct,
     useFormulationTypes,
 } from '@/hooks/useAgrochemicalCatalog';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+
+const AGROCHEMICAL_CATEGORIES = [
+    'Herbicida',
+    'Insecticida',
+    'Fungicida',
+    'Acaricida',
+    'Nematicida',
+    'Fertilizante',
+    'Coadyuvante',
+    'Regulador de crecimiento',
+    'Rodenticida',
+    'Molusquicida',
+    'Otro',
+];
 
 // Helper function to get toxicological class color
 const getToxClassColor = (value: string): string => {
@@ -105,6 +126,17 @@ export function AgrochemicalForm({
 
     const toxClass = watch('toxicological_class');
     const formulationCode = watch('formulation_code');
+    const categoryValue = watch('category') || '';
+
+    const selectedCategories = categoryValue ? categoryValue.split(',').map(c => c.trim()).filter(Boolean) : [];
+
+    const toggleCategory = (cat: string) => {
+        const current = selectedCategories;
+        const updated = current.includes(cat)
+            ? current.filter(c => c !== cat)
+            : [...current, cat];
+        setValue('category', updated.join(', '));
+    };
 
     useEffect(() => {
         if (agrochemical) {
@@ -222,12 +254,61 @@ export function AgrochemicalForm({
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="category">Categoría</Label>
-                                    <Input
-                                        id="category"
-                                        {...register('category')}
-                                        placeholder="Ej: Herbicida"
-                                    />
+                                    <Label>Categoría</Label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                type="button"
+                                                className={cn(
+                                                    'w-full justify-between font-normal',
+                                                    !selectedCategories.length && 'text-muted-foreground'
+                                                )}
+                                            >
+                                                {selectedCategories.length > 0
+                                                    ? `${selectedCategories.length} seleccionada(s)`
+                                                    : 'Seleccionar categorías'}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[250px] p-2" align="start">
+                                            <div className="space-y-1 max-h-60 overflow-y-auto">
+                                                {AGROCHEMICAL_CATEGORIES.map((cat) => (
+                                                    <button
+                                                        key={cat}
+                                                        type="button"
+                                                        className={cn(
+                                                            'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent cursor-pointer',
+                                                            selectedCategories.includes(cat) && 'bg-accent'
+                                                        )}
+                                                        onClick={() => toggleCategory(cat)}
+                                                    >
+                                                        <div className={cn(
+                                                            'flex h-4 w-4 items-center justify-center rounded-sm border',
+                                                            selectedCategories.includes(cat)
+                                                                ? 'bg-primary border-primary text-primary-foreground'
+                                                                : 'border-muted-foreground'
+                                                        )}>
+                                                            {selectedCategories.includes(cat) && (
+                                                                <Check className="h-3 w-3" />
+                                                            )}
+                                                        </div>
+                                                        {cat}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
+                                    {selectedCategories.length > 0 && (
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                            {selectedCategories.map((cat) => (
+                                                <Badge key={cat} variant="secondary" className="text-xs">
+                                                    {cat}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="formulation_code">Formulación</Label>
